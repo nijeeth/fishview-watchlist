@@ -1,0 +1,96 @@
+{
+  "manifest_version": 3,
+  "name": "FishView Watchlist",
+  "version": "1.0.0",
+  "minimum_chrome_version": "111",
+  "description": "Stock watchlist dock beside TradingView, Screener.in and Chartink: lists, colour labels, CSV import, delayed quotes, optional sync.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": ["storage", "alarms"],
+  "host_permissions": [
+    "https://www.tradingview.com/*",
+    "https://in.tradingview.com/*",
+    "https://es.tradingview.com/*",
+    "https://www.screener.in/*",
+    "https://screener.in/*",
+    "https://chartink.com/*",
+    "https://www.chartink.com/*",
+    "https://public.fyers.in/*",
+    "https://query1.finance.yahoo.com/*",
+    "https://query2.finance.yahoo.com/*",
+    "https://fc.yahoo.com/*",
+    "https://finance.yahoo.com/*",
+    "https://*.supabase.co/*"
+  ],
+  "action": {
+    "default_title": "FishView Watchlist",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png"
+    }
+  },
+  "background": {
+    "service_worker": "background/index.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.tradingview.com/*",
+        "https://in.tradingview.com/*",
+        "https://es.tradingview.com/*",
+        "https://www.screener.in/*",
+        "https://screener.in/*",
+        "https://chartink.com/*",
+        "https://www.chartink.com/*"
+      ],
+      "js": ["shell/boot.js"],
+      "css": ["shell/page.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.tradingview.com/*",
+        "https://in.tradingview.com/*",
+        "https://es.tradingview.com/*"
+      ],
+      "js": ["sites/charts/page-bridge.js"],
+      "run_at": "document_idle",
+      "world": "MAIN"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "config/*.js",
+        "persist/*.js",
+        "lists/*.js",
+        "ingest/*.js",
+        "listings/*.js",
+        "quotes/*.js",
+        "cloud/*.js",
+        "shell/*.js",
+        "shell/*.css",
+        "sites/charts/*.js",
+        "sites/screener/*.js",
+        "sites/chartink/*.js",
+        "shared/*.js"
+      ],
+      "matches": [
+        "https://www.tradingview.com/*",
+        "https://in.tradingview.com/*",
+        "https://es.tradingview.com/*",
+        "https://www.screener.in/*",
+        "https://screener.in/*",
+        "https://chartink.com/*",
+        "https://www.chartink.com/*"
+      ]
+    }
+  ]
+}

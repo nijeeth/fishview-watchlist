@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+<title>FishView Watchlist</title>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#2b5ff0"/>
+    <stop offset="0.55" stop-color="#1e4fd6"/>
+    <stop offset="1" stop-color="#1638a8"/>
+  </linearGradient>
+</defs>
+<rect width="128" height="128" rx="28" fill="url(#bg)"/>
+<!-- fish body -->
+<path fill="#fff" d="M28 64C44 33 86 29 112 64C86 99 44 95 28 64Z"/>
+<!-- tail -->
+<path fill="#fff" d="M42 64L13 36Q22 64 13 92Z"/>
+<!-- rising chart line; end point doubles as the eye -->
+<polyline points="44,76 60,68 72,75 93,53" fill="none" stroke="#089981" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="93" cy="53" r="7.5" fill="#089981"/>
+</svg>

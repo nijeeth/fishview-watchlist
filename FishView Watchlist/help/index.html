@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <title>FishView Watchlist — Help · Set up Supabase cloud sync</title>
+  <link rel="stylesheet" href="help.css" />
+  <script src="help.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to the steps</a>
+
+  <header class="top">
+    <div class="top-inner">
+      <div class="top-text">
+        <p class="eyebrow">FishView Watchlist · Help</p>
+        <h1>Set up cloud sync with Supabase</h1>
+      <p class="lead">
+          A picture-by-picture guide. You do not need any technical knowledge. Just follow the numbered steps
+          and look for the <span class="red-box-word">red boxes</span> in each picture. They show where to click.
+        </p>
+      </div>
+      <button type="button" class="theme-btn" id="themeToggle" aria-pressed="false" hidden>
+        <span class="theme-btn-icon" aria-hidden="true"></span>
+        <span class="theme-btn-label">Dark mode</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="main" class="wrap">
+
+    <!-- ===== Intro ===== -->
+    <section class="intro" aria-labelledby="intro-title">
+      <h2 id="intro-title" class="visually-hidden">Before you start</h2>
+      <div class="intro-grid">
+        <article class="intro-card">
+          <div class="intro-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M7 18a5 5 0 0 1-.6-9.96A6 6 0 0 1 18 8.5a4.5 4.5 0 0 1-.5 9.5H7z" /></svg>
+          </div>
+          <h3>What this does</h3>
+          <p>It keeps a copy of your watchlists in <strong>your own</strong> free online storage, so they show up on your other computers too.</p>
+          <p class="muted">This is <strong>optional</strong>. Without it, your lists stay saved on this computer.</p>
+        </article>
+        <article class="intro-card">
+          <div class="intro-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9" /></svg>
+          </div>
+          <h3>What you'll need</h3>
+          <ul class="ticks">
+            <li>An email address you can open now</li>
+            <li>Chrome, with FishView Watchlist installed</li>
+            <li>A pen and paper, or a notes app, to write down your passwords</li>
+          </ul>
+          <p class="muted">Supabase's <strong>Free</strong> plan costs nothing.</p>
+        </article>
+        <article class="intro-card">
+          <div class="intro-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+          </div>
+          <h3>How long it takes</h3>
+          <p class="big-number">About 15 minutes</p>
+          <p class="muted">You only do this once. After that, syncing happens by itself.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ===== Progress overview ===== -->
+    <nav class="progress" aria-labelledby="progress-title">
+      <h2 id="progress-title">Your journey: 6 parts, 17 small steps</h2>
+      <ol class="progress-list">
+        <li><a href="#part-1"><span class="p-num">1</span><span class="p-text"><strong>Make a free account</strong><small>Steps 1–4</small></span></a></li>
+        <li><a href="#part-2"><span class="p-num">2</span><span class="p-text"><strong>Create your project</strong><small>Steps 5–6</small></span></a></li>
+        <li><a href="#part-3"><span class="p-num">3</span><span class="p-text"><strong>Add the watchlist table</strong><small>Steps 7–9</small></span></a></li>
+        <li><a href="#part-4"><span class="p-num">4</span><span class="p-text"><strong>Make your FishView login</strong><small>Steps 10–11</small></span></a></li>
+        <li><a href="#part-5"><span class="p-num">5</span><span class="p-text"><strong>Copy 2 connection details</strong><small>Steps 12–15</small></span></a></li>
+        <li><a href="#part-6"><span class="p-num">6</span><span class="p-text"><strong>Connect FishView</strong><small>Steps 16–17</small></span></a></li>
+      </ol>
+    </nav>
+
+    <!-- ===== Words explained ===== -->
+    <section class="board" aria-labelledby="words-title">
+      <h2 id="words-title">A few words you will see, in plain English</h2>
+      <dl class="glossary">
+        <div><dt>Supabase</dt><dd>A company that gives you free online storage. You make your own account with them. FishView does not own or run it.</dd></div>
+        <div><dt>Project</dt><dd>Your own private storage box inside Supabase. You create one for FishView.</dd></div>
+        <div><dt>Table</dt><dd>Like one sheet in a spreadsheet. FishView uses one table, called <code>fv_list_book</code>, to keep your lists.</dd></div>
+        <div><dt>SQL</dt><dd>A short set of instructions that builds the table for you. You just copy, paste and click <strong>Run</strong>.</dd></div>
+        <div><dt>API URL</dt><dd>The web address of your project, for example <code>https://abcd1234.supabase.co</code>. It tells FishView where your storage box is.</dd></div>
+        <div><dt>Publishable key</dt><dd>A long code starting with <code>sb_publishable_</code>. Think of it as the address label on the box. It is safe to paste into FishView.</dd></div>
+        <div><dt>Secret key</dt><dd>A master key starting with <code>sb_secret_</code>. <strong>Never</strong> copy it into FishView or share it with anyone.</dd></div>
+        <div><dt>RLS (Row Level Security)</dt><dd>A lock that makes sure each login can only see its own watchlists. Always keep it switched on.</dd></div>
+      </dl>
+    </section>
+
+    <!-- ===== Three passwords ===== -->
+    <section class="board warn" aria-labelledby="pw-title">
+      <h2 id="pw-title"><span class="warn-icon" aria-hidden="true">!</span> You will make 3 different passwords. Don't mix them up.</h2>
+      <ol class="pw-list">
+        <li>
+          <span class="pw-tag">Password 1</span>
+          <strong>Your Supabase website login</strong> (step 2). Used to sign in at supabase.com.
+          <span class="pw-no">Not used in FishView.</span>
+        </li>
+        <li>
+          <span class="pw-tag">Password 2</span>
+          <strong>Database password</strong> (step 6). Supabase asks for it when you create the project. Save it somewhere safe.
+          <span class="pw-no">Not used in FishView.</span>
+        </li>
+        <li>
+          <span class="pw-tag pw-tag-yes">Password 3</span>
+          <strong>Your FishView login</strong> (step 11). An email and password you create inside your project.
+          <span class="pw-yes">This is the one you type into FishView.</span>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ================= PART 1 ================= -->
+    <section class="part" id="part-1" aria-labelledby="part-1-title">
+      <header class="part-head">
+        <span class="part-kicker">Part 1 of 6</span>
+        <h2 id="part-1-title">Make your free Supabase account</h2>
+        <p>Already have a Supabase account? Sign in and skip to <a href="#step-5">step 5</a>.</p>
+      </header>
+
+      <ol class="steps" start="1">
+        <li class="step" id="step-1">
+          <div class="step-head"><span class="n" aria-hidden="true">1</span><h3><span class="visually-hidden">Step 1: </span>Open Supabase and click “Sign up”</h3></div>
+          <div class="step-body">
+            <p>Open <a href="https://supabase.com/dashboard" target="_blank" rel="noopener">supabase.com/dashboard</a> in a new tab. At the bottom of the page, next to “Don’t have an account?”, click <strong>Sign up</strong>.</p>
+            <p class="tip">You can also use the <strong>Open Supabase</strong> button in FishView’s Cloud tab.</p>
+          </div>
+          <figure class="shot shot--narrow">
+            <a href="images/step-01-sign-up.png" target="_blank" rel="noopener"><img src="images/step-01-sign-up.png" width="692" height="873" loading="lazy" alt="Supabase sign-in page titled Welcome back. A red box marks the Sign up link at the bottom, next to the words Don't have an account?" /></a>
+            <figcaption>Click <strong>Sign up</strong> (red box) at the bottom of the page.</figcaption>
+          </figure>
+        </li>
+
+        <li class="step" id="step-2">
+          <div class="step-head"><span class="n" aria-hidden="true">2</span><h3><span class="visually-hidden">Step 2: </span>Type your email and a new password, then click “Sign up”</h3></div>
+          <div class="step-body">
+            <p>Type your email address and make up a password. Then click the green <strong>Sign up</strong> button.</p>
+            <p class="tip"><span class="pw-tag">Password 1</span> This is only for logging in to the Supabase website. You won’t type it into FishView.</p>
+            <p class="muted">Prefer not to make a new password? You can use one of the “Continue with…” buttons instead.</p>
+          </div>
+          <figure class="shot shot--narrow">
+            <a href="images/step-02-email-password.png" target="_blank" rel="noopener"><img src="images/step-02-email-password.png" width="678" height="817" loading="lazy" alt="Supabase Get started page. Red box 1 marks the Email and Password boxes. Red box 2 marks the green Sign up button." /></a>
+            <figcaption><strong>1</strong> Type your email and a password. <strong>2</strong> Click <strong>Sign up</strong>. (Email hidden for privacy.)</figcaption>
+          </figure>
+        </li>
+
+        <li class="step" id="step-3">
+          <div class="step-head"><span class="n" aria-hidden="true">3</span><h3><span class="visually-hidden">Step 3: </span>Open the email from Supabase and click “Confirm Email Address”</h3></div>
+          <div class="step-body">
+            <p>Supabase will show a “Check your email” message. Go to your inbox, open the email from Supabase and click <strong>Confirm Email Address</strong>. Supabase will open again in your browser.</p>
+            <p class="tip">Can’t find it? Look in your Spam or Promotions folder. The link stops working after about 10 minutes. If it has expired, sign up again to get a new one.</p>
+          </div>
+          <div class="shot-pair">
+            <figure class="shot">
+              <a href="images/step-03a-check-email.png" target="_blank" rel="noopener"><img src="images/step-03a-check-email.png" width="537" height="427" loading="lazy" alt="Supabase message in a green box: Check your email. We sent you a link to finish signing up. It expires in 10 minutes." /></a>
+              <figcaption>First you’ll see this message.</figcaption>
+            </figure>
+            <figure class="shot">
+              <a href="images/step-03b-confirm-email.png" target="_blank" rel="noopener"><img src="images/step-03b-confirm-email.png" width="1188" height="567" loading="lazy" alt="Email from Supabase titled Confirm your email and launch your projects on Supabase. A red box marks the green Confirm Email Address button." /></a>
+              <figcaption>In your inbox, click <strong>Confirm Email Address</strong>.</figcaption>
+            </figure>
+          </div>
+        </li>
+
+        <li class="step" id="step-4">
+          <div class="step-head"><span class="n" aria-hidden="true">4</span><h3><span class="visually-hidden">Step 4: </span>Create your “organization” (Personal, Free)</h3></div>
+          <div class="step-body">
+            <p>Supabase asks you to create an <em>organization</em>. This is just a folder that holds your projects.</p>
+            <ul class="do-list">
+              <li><strong>Name:</strong> type any name, or leave it as it is.</li>
+              <li><strong>Type:</strong> choose <strong>Personal</strong>.</li>
+              <li><strong>Plan:</strong> choose <strong>Free – $0/month</strong>.</li>
+            </ul>
+            <p>Then click <strong>Create organization</strong>.</p>
+          </div>
+          <figure class="shot">
+            <a href="images/step-04-create-organization.png" target="_blank" rel="noopener"><img src="images/step-04-create-organization.png" width="857" height="567" loading="lazy" alt="Create a new organization form. Red box 1 marks Type set to Personal. Red box 2 marks Plan set to Free, 0 dollars per month. Red box 3 marks the Create organization button." /></a>
+            <figcaption><strong>1</strong> Type: Personal. <strong>2</strong> Plan: Free. <strong>3</strong> Click <strong>Create organization</strong>.</figcaption>
+          </figure>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ================= PART 2 ================= -->
+    <section class="part" id="part-2" aria-labelledby="part-2-title">
+      <header class="part-head">
+        <span class="part-kicker">Part 2 of 6</span>
+        <h2 id="part-2-title">Create your project (your private storage box)</h2>
+    </header>
+
+      <ol class="steps" start="5">
+        <li class="step" id="step-5">
+          <div class="step-head"><span class="n" aria-hidden="true">5</span><h3><span class="visually-hidden">Step 5: </span>Click “New project”</h3></div>
+          <div class="step-body">
+            <p>On the <strong>Projects</strong> page, click the green <strong>New project</strong> button.</p>
+        </div>
+          <figure class="shot">
+            <a href="images/step-05-new-project.png" target="_blank" rel="noopener"><img src="images/step-05-new-project.png" width="1865" height="522" loading="lazy" alt="Supabase Projects page with no projects yet. A red box marks the green New project button near the top right." /></a>
+            <figcaption>Click <strong>New project</strong> (red box).</figcaption>
+        </figure>
+      </li>
+
+        <li class="step" id="step-6">
+          <div class="step-head"><span class="n" aria-hidden="true">6</span><h3><span class="visually-hidden">Step 6: </span>Fill in the project form and create the project</h3></div>
+          <div class="step-body">
+            <ul class="do-list">
+              <li><strong>Project name:</strong> anything you like, for example <em>FishView</em>.</li>
+              <li><strong>Database password:</strong> make up a <strong>new</strong> password (or click “Generate a password”). Don’t use your email password or your Supabase login. Write it down.</li>
+              <li><strong>Region:</strong> choose the one closest to where you live.</li>
+              <li><strong>Security:</strong> make sure <strong>Enable automatic RLS</strong> is ticked. This keeps your data private.</li>
+            </ul>
+            <p>Then click the create button at the bottom of the form. Supabase takes a minute or two to set up your project. Wait until it’s ready before you go on.</p>
+            <p class="tip"><span class="pw-tag">Password 2</span> The database password is only for Supabase. Keep it safe, but <strong>don’t</strong> type it into FishView.</p>
+          </div>
+          <figure class="shot">
+            <a href="images/step-06-project-details.png" target="_blank" rel="noopener"><img src="images/step-06-project-details.png" width="996" height="842" loading="lazy" alt="New project form showing Organization, GitHub (optional), Project name, Database password, Region and Security. Red boxes mark the Database password field and the ticked Enable automatic RLS option." /></a>
+            <figcaption>Red boxes: the <strong>Database password</strong> and <strong>Enable automatic RLS</strong> (keep it ticked).</figcaption>
+          </figure>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ================= PART 3 ================= -->
+    <section class="part" id="part-3" aria-labelledby="part-3-title">
+      <header class="part-head">
+        <span class="part-kicker">Part 3 of 6</span>
+        <h2 id="part-3-title">Add the watchlist table</h2>
+        <p>FishView gives you a ready-made set of instructions (the “setup SQL”) that builds the table for you. You won’t need to type any code.</p>
+      </header>
+
+      <ol class="steps" start="7">
+        <li class="step" id="step-7">
+          <div class="step-head"><span class="n" aria-hidden="true">7</span><h3><span class="visually-hidden">Step 7: </span>In Supabase, click “SQL Editor”</h3></div>
+          <div class="step-body">
+            <p>Once your project is ready, find <strong>SQL Editor</strong> in the menu on the left and click it. If you only see small icons, hover over the menu to show the names.</p>
+        </div>
+          <figure class="shot">
+            <a href="images/step-07-open-sql-editor.png" target="_blank" rel="noopener"><img src="images/step-07-open-sql-editor.png" width="1152" height="746" loading="lazy" alt="Supabase project overview with the left menu open. A red box marks SQL Editor, the third item in the menu." /></a>
+            <figcaption>Click <strong>SQL Editor</strong> in the left menu.</figcaption>
+        </figure>
+      </li>
+
+        <li class="step" id="step-8">
+          <div class="step-head"><span class="n" aria-hidden="true">8</span><h3><span class="visually-hidden">Step 8: </span>In FishView, open the Cloud tab and click “Copy setup SQL”</h3></div>
+          <div class="step-body">
+            <p>Go back to the FishView dock (beside TradingView, Screener.in or Chartink). Click the <strong>Cloud</strong> tab, then click the purple <strong>Copy setup SQL</strong> button.</p>
+            <p>This copies the instructions that build the table where FishView saves your watchlists. FishView shows “Setup SQL copied” when it’s done.</p>
+        </div>
+          <figure class="shot shot--narrow">
+            <a href="images/step-08-copy-setup-sql.png" target="_blank" rel="noopener"><img src="images/step-08-copy-setup-sql.png" width="486" height="866" loading="lazy" alt="The FishView Watchlist dock. Red box 1 marks the Cloud tab at the top. Red box 2 marks the purple Copy setup SQL button, below the Connect button." /></a>
+            <figcaption><strong>1</strong> Click <strong>Cloud</strong>. <strong>2</strong> Click <strong>Copy setup SQL</strong>.</figcaption>
+        </figure>
+      </li>
+
+        <li class="step" id="step-9">
+          <div class="step-head"><span class="n" aria-hidden="true">9</span><h3><span class="visually-hidden">Step 9: </span>Paste into the SQL Editor and click “Run”</h3></div>
+          <div class="step-body">
+            <p>Go back to the Supabase SQL Editor tab. Click inside the big empty box and paste (<kbd>Ctrl</kbd> + <kbd>V</kbd>, or <kbd>⌘</kbd> + <kbd>V</kbd> on a Mac). Then click the green <strong>Run</strong> button at the top right.</p>
+            <p class="ok-note"><span class="ok-icon" aria-hidden="true">✓</span> Look for <strong>“Success. No rows returned”</strong> at the bottom. That means it worked. The table starts empty, which is normal.</p>
+            <p class="tip">Supabase may show a warning before it runs. If you pasted FishView’s setup SQL, it’s fine to confirm.</p>
+          </div>
+          <figure class="shot">
+            <a href="images/step-09-paste-and-run.png" target="_blank" rel="noopener"><img src="images/step-09-paste-and-run.png" width="1376" height="553" loading="lazy" alt="Supabase SQL Editor with the FishView setup SQL pasted in. Red arrows point to: 1, paste the copied code here; 2, click Run at the top right; 3, check for the success message Success. No rows returned, at the bottom." /></a>
+            <figcaption><strong>1</strong> Paste. <strong>2</strong> Click <strong>Run</strong>. <strong>3</strong> Look for the success message.</figcaption>
+          </figure>
+
+          <div class="sql-box" id="setup-sql-box">
+            <div class="sql-head">
+              <div>
+                <h4>Copy button not working? Copy the setup SQL here</h4>
+                <p class="muted">This is the same setup SQL that FishView’s <strong>Copy setup SQL</strong> button copies. Only run it in <strong>your own</strong> project.</p>
+              </div>
+              <button type="button" class="copy-btn" id="copySqlBtn" data-copy-target="fv-setup-sql" hidden>Copy SQL</button>
+            </div>
+<!-- NOTE FOR MAINTAINER: keep this block identical to the SQL behind the Cloud tab "Copy Setup SQL" button (cloud/). -->
+<pre class="sql" id="fv-setup-sql" tabindex="0" aria-label="Setup SQL"><code>-- FishView Watchlist · run once in Supabase SQL Editor
+create table if not exists public.fv_list_book (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  book jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.fv_list_book enable row level security;
+
+drop policy if exists "fv_list_book_select" on public.fv_list_book;
+drop policy if exists "fv_list_book_insert" on public.fv_list_book;
+drop policy if exists "fv_list_book_update" on public.fv_list_book;
+drop policy if exists "fv_list_book_delete" on public.fv_list_book;
+
+create policy "fv_list_book_select" on public.fv_list_book
+  for select using (auth.uid() = user_id);
+create policy "fv_list_book_insert" on public.fv_list_book
+  for insert with check (auth.uid() = user_id);
+create policy "fv_list_book_update" on public.fv_list_book
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "fv_list_book_delete" on public.fv_list_book
+  for delete using (auth.uid() = user_id);</code></pre>
+            <p class="copy-status" id="copySqlStatus" role="status" aria-live="polite"></p>
+            <p class="muted noscript-hint">To copy by hand: click inside the box, press <kbd>Ctrl</kbd> + <kbd>A</kbd> (or <kbd>⌘</kbd> + <kbd>A</kbd>), then <kbd>Ctrl</kbd> + <kbd>C</kbd> (or <kbd>⌘</kbd> + <kbd>C</kbd>).</p>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ================= PART 4 ================= -->
+    <section class="part" id="part-4" aria-labelledby="part-4-title">
+      <header class="part-head">
+        <span class="part-kicker">Part 4 of 6</span>
+        <h2 id="part-4-title">Make your FishView login</h2>
+        <p>Now you create the email and password that FishView will use to open your storage box.</p>
+      </header>
+
+      <ol class="steps" start="10">
+        <li class="step" id="step-10">
+          <div class="step-head"><span class="n" aria-hidden="true">10</span><h3><span class="visually-hidden">Step 10: </span>Click Authentication → Add user → Create new user</h3></div>
+          <div class="step-body">
+            <p>In the left menu, click <strong>Authentication</strong> (the icon that looks like a small lock or badge). On the <strong>Users</strong> page, click the green <strong>Add user</strong> button at the top right, then choose <strong>Create new user</strong>.</p>
+        </div>
+          <figure class="shot">
+            <a href="images/step-10-add-user.png" target="_blank" rel="noopener"><img src="images/step-10-add-user.png" width="1378" height="591" loading="lazy" alt="Supabase Authentication, Users page. Red arrow 1 points to the Authentication icon in the left menu. Red arrow 2 points to Create new user in the Add user drop-down at the top right." /></a>
+            <figcaption><strong>1</strong> Click <strong>Authentication</strong>. <strong>2</strong> Click <strong>Add user</strong>, then <strong>Create new user</strong>.</figcaption>
+        </figure>
+      </li>
+
+        <li class="step" id="step-11">
+          <div class="step-head"><span class="n" aria-hidden="true">11</span><h3><span class="visually-hidden">Step 11: </span>Type an email and password, then click “Create user”</h3></div>
+          <div class="step-body">
+            <p>Type an email address and a password. Leave <strong>Auto confirm user?</strong> ticked. Then click <strong>Create user</strong>.</p>
+            <p class="key-note"><span class="pw-tag pw-tag-yes">Password 3</span> <strong>Write this email and password down.</strong> You will paste them into FishView in step 16.</p>
+        </div>
+          <figure class="shot">
+            <a href="images/step-11-create-user.png" target="_blank" rel="noopener"><img src="images/step-11-create-user.png" width="1047" height="815" loading="lazy" alt="Create a new user pop-up. Red box 1 marks the Email address and User Password boxes. Auto confirm user is ticked. Red box 2 marks the green Create user button." /></a>
+            <figcaption><strong>1</strong> Type an email and password. <strong>2</strong> Click <strong>Create user</strong>. This is the login you’ll use in FishView.</figcaption>
+        </figure>
+      </li>
+    </ol>
+    </section>
+
+    <!-- ================= PART 5 ================= -->
+    <section class="part" id="part-5" aria-labelledby="part-5-title">
+      <header class="part-head">
+        <span class="part-kicker">Part 5 of 6</span>
+        <h2 id="part-5-title">Copy your 2 connection details</h2>
+        <p>FishView needs two things from Supabase: the <strong>API URL</strong> (where your box is) and the <strong>Publishable key</strong> (its address label). Keep FishView’s Cloud tab open so you can paste each one as you go.</p>
+      </header>
+
+      <ol class="steps" start="12">
+        <li class="step" id="step-12">
+          <div class="step-head"><span class="n" aria-hidden="true">12</span><h3><span class="visually-hidden">Step 12: </span>Click Integrations → Data API</h3></div>
+          <div class="step-body">
+            <p>In the left menu, click <strong>Integrations</strong>. On the next screen, under <strong>Installed</strong>, click <strong>Data API</strong>.</p>
+          </div>
+          <figure class="shot">
+            <a href="images/step-12-open-data-api.png" target="_blank" rel="noopener"><img src="images/step-12-open-data-api.png" width="1394" height="979" loading="lazy" alt="Two Supabase screens side by side. Left: a red box marks Integrations in the left menu. Right: a red box marks Data API under Installed on the Integrations page." /></a>
+            <figcaption>Left: click <strong>Integrations</strong>. Right: click <strong>Data API</strong>.</figcaption>
+          </figure>
+        </li>
+
+        <li class="step" id="step-13">
+          <div class="step-head"><span class="n" aria-hidden="true">13</span><h3><span class="visually-hidden">Step 13: </span>Copy the API URL</h3></div>
+          <div class="step-body">
+            <p>In the <strong>API URL</strong> box, click <strong>Copy</strong>. Paste it into FishView’s <strong>Supabase URL</strong> box.</p>
+            <p class="tip">It looks like <code>https://abcd1234.supabase.co/rest/v1/</code>. If it ends with <code>/rest/v1/</code>, delete that part so only <code>https://abcd1234.supabase.co</code> is left. That matches the example shown in FishView’s box.</p>
+          </div>
+          <figure class="shot">
+            <a href="images/step-13-copy-api-url.png" target="_blank" rel="noopener"><img src="images/step-13-copy-api-url.png" width="1426" height="882" loading="lazy" alt="Supabase Data API page. A red box marks the API URL section with its Copy button. Another red box marks Data API in the Installed list on the left." /></a>
+            <figcaption>Click <strong>Copy</strong> next to the API URL. (Address hidden for privacy.)</figcaption>
+          </figure>
+        </li>
+
+        <li class="step" id="step-14">
+          <div class="step-head"><span class="n" aria-hidden="true">14</span><h3><span class="visually-hidden">Step 14: </span>Click “Project Settings”</h3></div>
+          <div class="step-body">
+            <p>In the left menu, click <strong>Project Settings</strong> (the gear icon at the bottom).</p>
+          </div>
+          <figure class="shot">
+            <a href="images/step-14-project-settings.png" target="_blank" rel="noopener"><img src="images/step-14-project-settings.png" width="1374" height="702" loading="lazy" alt="Supabase left menu. A red circle and the words Click Project Settings mark Project Settings at the bottom of the menu." /></a>
+            <figcaption>Click <strong>Project Settings</strong> at the bottom of the menu.</figcaption>
+          </figure>
+        </li>
+
+        <li class="step" id="step-15">
+          <div class="step-head"><span class="n" aria-hidden="true">15</span><h3><span class="visually-hidden">Step 15: </span>Click “API Keys” and copy the Publishable key</h3></div>
+          <div class="step-body">
+            <p>Click <strong>API Keys</strong>. In the <strong>Publishable key</strong> section, click the small copy icon next to the key that starts with <code>sb_publishable_</code>. Paste it into FishView’s <strong>Publishable key</strong> box.</p>
+            <p class="danger-note"><span class="danger-icon" aria-hidden="true">✕</span> <strong>Never</strong> copy anything from <strong>Secret keys</strong> (<code>sb_secret_…</code>) or anything called <strong>service_role</strong>. Those are master keys.</p>
+            <p class="muted">Older projects may call it the <strong>anon public</strong> key (a long code starting with <code>eyJ</code>). You can use that one instead.</p>
+          </div>
+          <figure class="shot">
+            <a href="images/step-15-copy-publishable-key.png" target="_blank" rel="noopener"><img src="images/step-15-copy-publishable-key.png" width="1377" height="673" loading="lazy" alt="Supabase API Keys page. A red box marks API Keys in the Settings menu. The Publishable key section has a big green tick. The Secret keys section below is crossed out with a big pink X." /></a>
+            <figcaption>Green tick: copy the <strong>Publishable key</strong>. Pink cross: <strong>never</strong> use the Secret key. (Keys hidden for privacy.)</figcaption>
+          </figure>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ================= PART 6 ================= -->
+    <section class="part" id="part-6" aria-labelledby="part-6-title">
+      <header class="part-head">
+        <span class="part-kicker">Part 6 of 6</span>
+        <h2 id="part-6-title">Connect FishView</h2>
+        <p>You have everything you need. Go back to FishView.</p>
+      </header>
+
+      <ol class="steps" start="16">
+        <li class="step" id="step-16">
+          <div class="step-head"><span class="n" aria-hidden="true">16</span><h3><span class="visually-hidden">Step 16: </span>Paste these into FishView and click “Connect”</h3></div>
+          <div class="step-body">
+            <p>In FishView’s <strong>Cloud</strong> tab, fill in the four boxes like this:</p>
+            <div class="table-wrap">
+              <table class="map">
+                <caption class="visually-hidden">What to paste into each box in FishView’s Cloud tab</caption>
+                <thead>
+                  <tr><th scope="col">FishView box</th><th scope="col">What to paste</th><th scope="col">Where you got it</th></tr>
+                </thead>
+                <tbody>
+                  <tr><th scope="row">Supabase URL</th><td>Your API URL, e.g. <code>https://abcd1234.supabase.co</code></td><td><a href="#step-13">Step 13</a></td></tr>
+                  <tr><th scope="row">Publishable key</th><td>The key starting with <code>sb_publishable_</code></td><td><a href="#step-15">Step 15</a></td></tr>
+                  <tr><th scope="row">Email</th><td>The email of the user you created</td><td><a href="#step-11">Step 11</a></td></tr>
+                  <tr><th scope="row">Password</th><td>The password of that user (<span class="pw-tag pw-tag-yes pw-tag-sm">Password 3</span>)</td><td><a href="#step-11">Step 11</a></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>Then click the green <strong>Connect</strong> button.</p>
+            <div class="reassure">
+              <span class="reassure-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+              </span>
+              <p><strong>Your password is never stored.</strong> You type it once to connect, and FishView does not save it anywhere on your computer. The URL, key and email are saved in this browser only, so you don’t have to type them again.</p>
+            </div>
+          </div>
+          <figure class="shot shot--narrow">
+            <a href="images/step-16-paste-into-fishview.png" target="_blank" rel="noopener"><img src="images/step-16-paste-into-fishview.png" width="486" height="504" loading="lazy" alt="FishView Cloud tab. Red box 1 marks the four boxes: Supabase URL, Publishable key, the email box and the password box. Red box 2 marks the green Connect button." /></a>
+            <figcaption><strong>1</strong> Paste the four details. <strong>2</strong> Click <strong>Connect</strong>.</figcaption>
+          </figure>
+        </li>
+
+        <li class="step" id="step-17">
+          <div class="step-head"><span class="n n-done" aria-hidden="true">17</span><h3><span class="visually-hidden">Step 17: </span>Check that it worked</h3></div>
+          <div class="step-body">
+            <div class="success-panel">
+              <div class="success-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M7 18a5 5 0 0 1-.6-9.96A6 6 0 0 1 18 8.5a4.5 4.5 0 0 1-.5 9.5H7z" /><path d="M9 13l2 2 4-4" /></svg>
+              </div>
+              <div>
+                <p>You should see a cloud icon and the words <strong>“Cloud Link Established…”</strong> on the Cloud tab and the Watchlist tab.</p>
+                <p>That’s it. From now on, when you change a list, FishView saves it to your cloud about 2 seconds later. On another computer, install FishView and connect with the <strong>same</strong> details (step 16). Your lists will appear there too.</p>
+                <p class="muted">Want to double-check? In Supabase, open <strong>Table Editor → fv_list_book</strong>. You should see exactly <strong>one row</strong>.</p>
+              </div>
+            </div>
+  </div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ===== Troubleshooting ===== -->
+    <section class="board faq" id="help" aria-labelledby="faq-title">
+      <h2 id="faq-title">Something not working? Common fixes</h2>
+
+      <details>
+        <summary>“Invalid login” or wrong email/password</summary>
+        <p>Use the email and password you made in <a href="#step-11">step 11</a> (Authentication → Users). Don’t use your Supabase website login (password 1) or the database password (password 2).</p>
+      </details>
+      <details>
+        <summary>Wrong key or “invalid API key”</summary>
+        <p>Paste the <strong>Publishable</strong> key (<code>sb_publishable_…</code>), or the <strong>anon public</strong> key on older projects. Never the Secret key or service_role key. Check you copied the whole key, with no spaces at the start or end.</p>
+      </details>
+      <details>
+        <summary>“Database not ready” or the table can’t be found</summary>
+        <p>The setup SQL probably hasn’t run yet. Repeat <a href="#step-7">steps 7–9</a> and make sure you see “Success. No rows returned”. The table must be called <code>fv_list_book</code>.</p>
+      </details>
+      <details>
+        <summary>The Supabase URL isn’t accepted</summary>
+        <p>It should look like <code>https://abcd1234.supabase.co</code>. Remove anything after <code>.supabase.co</code> (such as <code>/rest/v1/</code>) and any spaces.</p>
+      </details>
+      <details>
+        <summary>I didn’t get the confirmation email</summary>
+        <p>Check Spam and Promotions. The link expires after about 10 minutes, so sign up again if it has expired. You can also use a “Continue with…” option on the sign-up page.</p>
+      </details>
+      <details>
+        <summary>Can FishView see my data?</summary>
+        <p>No. FishView only talks to the Supabase project <strong>you</strong> created. We don’t host your stocks and can’t see your database. FishView only uses its own table (<code>fv_list_book</code>). It keeps all your lists, stocks and labels as one saved copy, not one row per stock.</p>
+      </details>
+      <details>
+        <summary>What do “Disconnect” and “Delete Cloud Details” do?</summary>
+        <p><strong>Disconnect</strong> signs you out of the cloud. Your details stay filled in. <strong>Delete Cloud Details</strong> removes the URL, key and email from this browser only. Neither one deletes your Supabase project or the watchlists saved in it.</p>
+      </details>
+      <details>
+        <summary>Do I have to use the cloud?</summary>
+        <p>No. Cloud is optional. Your watchlists are always saved on this computer, even if you never connect.</p>
+      </details>
+    </section>
+
+    <!-- ===== Buttons reference ===== -->
+    <section class="board" aria-labelledby="buttons-title">
+      <h2 id="buttons-title">The buttons in FishView’s Cloud tab</h2>
+      <dl class="btn-ref">
+        <div><dt><span class="chip chip-green">Connect</span></dt><dd>Signs in to your project and starts syncing.</dd></div>
+        <div><dt><span class="chip chip-peach">Disconnect</span></dt><dd>Stops syncing on this browser. Nothing is deleted.</dd></div>
+        <div><dt><span class="chip chip-blue">Open Supabase</span></dt><dd>Opens the Supabase website.</dd></div>
+        <div><dt><span class="chip chip-violet">Help</span></dt><dd>Opens this page.</dd></div>
+        <div><dt><span class="chip chip-violet">Copy Setup SQL</span></dt><dd>Copies the instructions that build the table (<a href="#step-8">step 8</a>).</dd></div>
+        <div><dt><span class="chip chip-orange">Delete Cloud Details</span></dt><dd>Removes the URL, key and email from this browser. Your Supabase project isn’t touched.</dd></div>
+      </dl>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p>FishView Watchlist · Cloud sync uses your own Supabase project. Supabase screens may look slightly different if they update their website.</p>
+    <p><a href="#main">Back to top ↑</a></p>
+  </footer>
+</body>
+</html>

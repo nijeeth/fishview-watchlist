@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>FishView Watchlist</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header class="fv-pop-head">FishView Watchlist</header>
+  <div class="fv-pop-body">
+    <p class="sub">Show the Docker on</p>
+    <label class="row">
+      <span>
+        <strong>TradingView</strong>
+        <small>Charts</small>
+      </span>
+      <span class="switch">
+        <input type="checkbox" id="tv" />
+        <span class="slider"></span>
+      </span>
+    </label>
+    <label class="row">
+      <span>
+        <strong>Screener</strong>
+        <small>screener.in</small>
+      </span>
+      <span class="switch">
+        <input type="checkbox" id="screener" />
+        <span class="slider"></span>
+      </span>
+    </label>
+    <label class="row">
+      <span>
+        <strong>Chartink</strong>
+        <small>Scans</small>
+      </span>
+      <span class="switch">
+        <input type="checkbox" id="chartink" />
+        <span class="slider"></span>
+      </span>
+    </label>
+    <p class="hint">Turning a site off hides the Docker there. Your lists stay on this computer.</p>
+  </div>
+  <footer class="fv-credit"><span>FishView Watchlist</span><span class="fv-credit-sep">|</span><span>NijeethFish</span></footer>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+#fv-root {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+html.fv-panel-open .container,
+html.fv-panel-open .container-fluid {
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  width: auto !important;
+}
+
+html.fv-tv-docked,
+body.fv-tv-docked {
+      width: calc(100vw - var(--fv-dock-w, 350px)) !important;
+      margin-right: var(--fv-dock-w, 350px) !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+}
+
+button.fv-plus {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-right: 4px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: #089981;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  vertical-align: middle;
+}
+button.fv-plus:hover {
+  background: #067a67;
+}
