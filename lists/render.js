@@ -123,7 +123,8 @@ export function watchlistHtml(book, { cloudIcon, refreshIcon, cloudHint, cloudSt
           <button type="button" class="fv-btn fv-pill fv-pill-scan" id="fv-restore-backup" title="Replace all lists on this computer from a file">Restore Backup</button>
         </div>
         <div class="fv-cloud-line">
-          <span class="fv-cloud-status ${cloudStatus?.on ? "on" : "off"}">${cloudIcon} ${esc(cloudStatus?.label || "Cloud: Not configured")}</span>
+          <span class="fv-cloud-status ${esc(cloudStatus?.tone || "off")}">${cloudIcon} ${esc(cloudStatus?.label || "Not configured")}</span>
+          <button type="button" class="fv-btn fv-pill fv-pill-file" id="fv-cloud-sync-now" ${cloudStatus?.canSync ? "" : "disabled"} title="${cloudStatus?.canSync ? "Refresh lists from cloud" : "Connect on the Cloud tab to sync"}">${cloudIcon} Sync</button>
         </div>
         ${
           noticeCounts
@@ -151,7 +152,7 @@ export function watchlistHtml(book, { cloudIcon, refreshIcon, cloudHint, cloudSt
         <div class="fv-row fv-actions">
           <button type="button" class="fv-btn fv-pill fv-pill-current" id="fv-current" ${currentReady ? "" : "disabled"} title="${currentReady ? "Add this page symbol to this list" : esc(chartHint)}">Current</button>
           <button type="button" class="fv-btn fv-pill fv-pill-add" id="fv-add" ${ingestReady ? "" : "disabled"} title="${ingestReady ? "Paste up to 5 symbols" : esc(ingestHint)}">Add</button>
-          <button type="button" class="fv-btn fv-pill fv-pill-scan" id="fv-scan" ${scanReady ? "" : "disabled"} title="${scanReady ? "Scan this page into a new list" : esc(screenerHint) + " / " + esc(chartinkHint)}">Scan</button>
+          <button type="button" class="fv-btn fv-pill fv-pill-scan" id="fv-scan" ${scanReady ? "" : "disabled"} title="${scanReady ? "Scan this page into a new list" : "Scan works on Screener and Chartink"}">Scan</button>
           <div class="fv-menu-wrap">
             <button type="button" class="fv-btn fv-pill fv-pill-file" id="fv-xfer" title="${ingestReady ? "Import or export CSV" : esc(ingestHint)}">File ▾</button>
             <div class="fv-menu" id="fv-xfer-menu" hidden>
@@ -161,18 +162,20 @@ export function watchlistHtml(book, { cloudIcon, refreshIcon, cloudHint, cloudSt
           </div>
         </div>
         <p class="fv-hint fv-meta">
-          ${list.stocks.length} / ${STOCK_CAP} stocks · ${book.lists.length} / ${LIST_CAP} lists · Filter Applied:
+          <span class="fv-meta-counts">${list.stocks.length} / ${STOCK_CAP} stocks · ${book.lists.length} / ${LIST_CAP} lists</span>
+          <span class="fv-meta-filter">Filter Applied:
           ${
             allOn
               ? `<span class="fv-filter-txt">All Labels</span>`
               : `${
                   LABELS.some((k) => on[k])
-                    ? `<span class="fv-head-dots">${LABELS.filter((k) => on[k])
-                        .map((lab) => `<span class="fv-head-dot fv-filter-dot" style="background:${LABEL_COLOR[lab]}"></span>`)
+                    ? `<span class="fv-filter-dots">${LABELS.filter((k) => on[k])
+                        .map((lab) => `<span class="fv-filter-dot" style="background:${LABEL_COLOR[lab]}"></span>`)
                         .join("")}</span>`
                     : ""
                 }${on.none ? `<span class="fv-ctx-dot fv-ctx-dot-empty fv-filter-none" title="Unlabel"></span>` : ""}`
           }
+          </span>
         </p>
       </div>
       <div class="fv-table-wrap">

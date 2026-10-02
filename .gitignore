@@ -1,0 +1,10 @@
+.DS_Store
+Thumbs.db
+_metadata/
+*.crx
+*.pem
+node_modules/
+
+# Chrome Web Store listing assets (dashboard only; not in the CRX)
+store/
+screenshots/

@@ -1,19 +1,17 @@
-# v1.0.0 — shipped
+# v1.0.0 — first public release
 
 This is the **v1.0.0** product. All items below are in the extension. There are no unfinished phase stubs.
 
 **What’s new in this version:** [WHATSNEW.md](./WHATSNEW.md)  
 **History of versions:** [CHANGELOG.md](./CHANGELOG.md)
 
-**v2.0.0 (planned):** Cloud Backup and Cloud Restore. The Cloud Backup control is in the Cloud tab markup but **hidden** in v1; Connect already syncs lists.
-
 ---
 
 ## Included in v1.0.0
 
-**Dock.** Watchlist / Cloud tabs, left-edge resize, Night/Day in the header, page push. Title: **FishView Watchlist**.
+**Dock.** Watchlist / Cloud tabs, left-edge resize, Night/Day in the header, page push. Title: **FishView Watchlist**. TradingView width **220–420** px; Screener/Chartink **180–280**. Click the blue header or **×** to minimise. Narrow dock: File menu not clipped; sticky headers opaque; **Filter Applied** dots stay 10px.
 
-**Lists.** 50 × 150, 4 colours + unlabeled, sort, filter, persist, Default + Demo, bulk select, local **Backup Local** / **Restore Backup** JSON.
+**Lists.** 50 × 150, 4 colours + unlabeled, sort, filter, persist, Default + Demo, bulk select, local **Backup Local** / **Restore Backup** JSON. Right-click menu stays inside the dock (flips up near the bottom).
 
 **Charts.** `fv_*` bridge. Current / row click switches TV using `pro_name` (`NASDAQ:` / `NYSE:`). `BATS` / `CBOE` / `CBOEONE` are not stored.
 
@@ -21,6 +19,6 @@ This is the **v1.0.0** product. All items below are in the extension. There are 
 
 **Screener + Chartink.** Scan (150 reject-all; current list or new list), per-row `+`, Current from URL. Compact dock; shared width. Chartink chart window in their Dark theme: website issue; dock offers **Use Chartink Day** on that screen only.
 
-**Quotes.** Not realtime. Yahoo every 60s, open list only. Watchlist banner is the caution line (no “Phase 6” prefix). `config/phase.js` only drives that banner.
+**Quotes.** Not realtime. Yahoo HTTP quote endpoints every 60s, open list only. Watchlist banner: **Careful: Not realtime. Prices from Yahoo every 60s** (max two lines). `config/phase.js` only drives that banner.
 
-**Cloud.** Supabase URL, Publishable key, Email, Password. Connect / Disconnect / Copy Setup SQL / Help. `fv_list_book` + RLS. Sync ~2s; pull on return. Password not stored. Delete Cloud Details is this browser only. Cloud Backup / Cloud Restore: **v2**.
+**Cloud.** Supabase URL, Publishable key, Email, Password. Connect / Disconnect / Copy Setup SQL / Help / **Log** (download `.txt`). `fv_list_book` + RLS. Sync ~2s; pull on return. Password not stored. Delete Cloud Details is this browser only. Watchlist status line (short words + **Sync**); Cloud tab keeps full **Cloud …** headings. Connect may ask Use cloud / Keep this browser / Keep both (first time or 7-day gap). Network fail keeps the session; **Database not ready** only if the table is missing. **Cloud Backup** is hidden; use **Connect** and **Backup Local** / **Restore Backup**.

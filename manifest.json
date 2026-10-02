@@ -3,7 +3,7 @@
   "name": "FishView Watchlist",
   "version": "1.0.0",
   "minimum_chrome_version": "111",
-  "description": "Stock watchlist dock beside TradingView, Screener.in and Chartink: lists, colour labels, CSV import, delayed quotes, optional sync.",
+  "description": "A stock watchlist dock beside your chart or screener. Lists stay on this computer. Delayed quotes. Optional sync.",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",

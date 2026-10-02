@@ -10,7 +10,7 @@ export const PHASE_NAME = {
   3: "Charts — same-window TV switch + Current",
   4: "Ingest — paste (max 5), CSV import/export, bulk log",
   5: "Sites — Screener + Chartink scan and per-row +",
-  6: "Careful: Not realtime data. Price data is fetched every 60s from Yahoo",
+  6: "Careful: Not realtime. Prices from Yahoo every 60s",
   7: "Cloud — user Supabase connect, then sync",
 };
 

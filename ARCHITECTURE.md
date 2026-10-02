@@ -5,7 +5,7 @@ Keep this file, `PHASES.md`, `WHATSNEW.md`, `CHANGELOG.md`, and `README.md` in s
 **Type:** Chrome MV3 content-script dock  
 **Version:** **1.0.0** (`manifest.json`)  
 **Watchlist caution banner:** `config/phase.js` (Yahoo not-realtime line; not a product-phase gate)  
-**Cloud:** live (`cloud/`, `https://*.supabase.co/*`). Cloud Backup / Cloud Restore: **v2** (control hidden in v1).  
+**Cloud:** live (`cloud/`, `https://*.supabase.co/*`). Cloud Backup control is hidden.  
 **Chrome:** `minimum_chrome_version` **111**  
 **Privacy:** https://sites.google.com/view/fishviewwatchlist-privacy  
 **Support:** nijeethfish@gmail.com  
@@ -19,7 +19,7 @@ Keep this file, `PHASES.md`, `WHATSNEW.md`, `CHANGELOG.md`, and `README.md` in s
 Right-side watchlist dock on TradingView, Screener.in, and Chartink. The page is **pushed** (`width` + `margin-right`); the dock does not cover the chart.
 
 - **Watchlist:** up to **50 lists × 150 stocks**, labels, sort, filter, bulk select, local JSON backup/restore, TV chart switch.
-- **Cloud:** optional **user-owned** Supabase. Password is typed only and never stored. **Cloud Backup / Cloud Restore: v2** (hidden in v1).
+- **Cloud:** optional **user-owned** Supabase. Password is typed only and never stored. Cloud Backup control is hidden; Connect already syncs.
 - **Quotes:** Yahoo CMP / % / Mcap for the **open list only**, every **60s**. Not realtime. Not stored.
 - **Ingest:** paste Add (max 5, comma-separated), CSV import/export (NSE/BSE prefixes; 151+ reject all).
 - **Sites:** Scan, per-row **+**, Current from Screener/Chartink company or stock URLs.
@@ -44,7 +44,7 @@ Each domain has its own `index.js`. The dock (`shell`) calls those entries.
 | `sites/charts/` | TV `fv_*` + MAIN `page-bridge.js` |
 | `sites/screener/` | Scan, row +, company URL |
 | `sites/chartink/` | Scan, row +, stock URL |
-| `cloud/` | Supabase auth, `fv_list_book` read/write, 2s push, pull on return |
+| `cloud/` | Supabase auth, `fv_list_book` read/write, 2s push, pull on return, local `fvDiagLog` |
 | `shared/` | Key isolation |
 | `background/` | Help page, Yahoo crumb/JSON, Fyers dump, `FV_CLOUD_HTTP` |
 | `popup/` | Per-site dock toggles |
@@ -122,29 +122,31 @@ Do not copy names or pipelines from other watchlist products. Chart-switch and N
 
 ## 6. Dock UI
 
-**Chrome:** title **FishView Watchlist** (`#1e4fd6`). × and double-click header minimize. Theme control is **Night / Day** in the header (`#fv-theme-btn`). Resize: left-edge handle `#fv-resize`.
+**Chrome:** title **FishView Watchlist** (`#1e4fd6`). × and click header minimize. Theme control is **Night / Day** in the header (`#fv-theme-btn`). Resize: left-edge handle `#fv-resize`.
 
-**Widths:** TV 350 (14px), Screener/Chartink 200 (compact 11px). Clamp TV 300–420, web 180–280.
+**Widths:** TV 350 (14px), Screener/Chartink 200 (compact 11px). Clamp TV 220–420, web 180–280. TV below 300 px sets `data-narrow` so pill labels ellipsis instead of leaking. **Backup Local** / **Restore Backup** stay 11px / 22px. Cloud-tab help is a 2×2 grid at 14px (wrap inside the pill).
 
 **Watchlist**
 
 - List picker (A–Z, 8-row drop, theme fill, `#089981` border).
 - `+` new list, `⋮` rename/delete, quotes refresh (`#fv-quotes-go`).
 - Current, Add, Scan, File (CSV this list). Local **Backup Local** / **Restore Backup** (all lists + labels).
-- Banner: Yahoo 60s caution (`phaseBanner` — no “Phase 6” prefix).
-- Cloud line: connection status only. Action results stay on the Cloud tab.
+- Banner: `Careful: Not realtime. Prices from Yahoo every 60s` (`phaseBanner`; max two lines; no “Phase 6” prefix).
+- Cloud line: cloud icon + short words (**Not configured** / **Not connected** / **Database not ready** / **Link Established** / **Connected** / **Connecting…** / **Network issue**) plus **[cloud] Sync** (manual pull). Cloud tab heading keeps the full **Cloud …** phrases.
 - Known issue: **Chartink website issue** on the chart window only (their Dark theme). Dock offers **Use Chartink Day** on that screen.
-- Table: Label | Name | Price | %Change | Mktcap. Long-press 500ms → batch (overlay checks on label column; header = select all). Confirm all bulk actions. Label 4 colours + unlabel; dest unlabeled. 150 add-what-fits; 30 batch cap.
-- Row click: select + TV `changeListing`. Right-click: colours, move/copy, delete.
+- Table: Label | Name | Price | %Change | Mktcap. **Filter Applied** colour dots stay 10px (column-header dots still shrink). Long-press 500ms → batch (overlay checks on label column; header = select all). Confirm all bulk actions. Label 4 colours + unlabel; dest unlabeled. 150 add-what-fits; 30 batch cap.
+- Row click: select + TV `changeListing`. Right-click: colours, move/copy, delete. Menu measures itself and flips up/left so it stays inside `#fv-panel`.
 
 **Cloud tab** (labels match the Help page)
 
 - Heading: **Cloud not configured** in `#e53935` until a session exists; then the connected heading in `#089981`.
 - **Supabase URL**, **Publishable key**, **Email**, **Password** (not stored).
-- Connect / Disconnect. **Cloud Backup** is in the markup but **hidden** (`display: none`). Cloud Backup and Cloud Restore ship in **v2.0.0**. Connect already syncs.
-- Open Supabase, Help, Copy Setup SQL — same fills as Backup Local (Night `rgba(123, 97, 255, 0.45)`, Day `#7b61ff`).
+- Connect / Disconnect. **Cloud Backup** is in the markup but **hidden** (`display: none`). Connect already syncs.
+- Help row **2×2:** Open Supabase, Help, Copy Setup SQL, **Log** (download `fv-cloud-log-YYYY-MM-DD.txt` from `fvDiagLog`, last 500 events; no lists/tokens). Same purple fills as Backup Local (Night `rgba(123, 97, 255, 0.45)`, Day `#7b61ff`).
 - Connect / Disconnect / Delete Cloud Details banners live **only** on this tab (~8s). Watchlist never shows those strings.
 - Delete Cloud Details (this browser only). Sync ~2s after list edits; pull on return / visibility.
+- **Connect choice** (first Connect, or `fvCloudBookAt` empty / ≥ 7 days, lists differ): Use cloud / Keep this browser / Keep both. Constant `CLOUD_SYNC_STALE_MS`. Matching fingerprints skip the popup. Within 7 days: last-write-wins pull. Notes are one sentence per line.
+- Add / New list modals: 15–16px type; Enter confirms (Shift+Enter newline in Add). New list card anchors under **+**. Delete-cloud confirm button: **Delete**.
 
 ---
 
@@ -158,7 +160,7 @@ Screener/Chartink: no TV API. Scan `table` links; `+` on rows; Current from URL.
 
 ## 8. Quotes and listings
 
-`quotesForOpenListOnly()`. 60s Yahoo via content-script interval (not `chrome.alarms`). Session = Yahoo `currentTradingPeriod`. Equity CMP / % / Mcap; index Mktcap `-`; F&O / unknown `-`. Refresh retries open list. No poll when dock closed. US store `NASDAQ:AAPL`, Yahoo `AAPL`.
+`quotesForOpenListOnly()`. 60s Yahoo **HTTP** (`query1` / `query2.finance.yahoo.com`; not yfinance) via content-script interval (not `chrome.alarms`). Session = Yahoo `currentTradingPeriod`. Equity CMP / % / Mcap; index Mktcap `-`; F&O / unknown `-`. Refresh retries open list. No poll when dock closed. US store `NASDAQ:AAPL`, Yahoo `AAPL`. Yahoo’s own exchange delay (often 0–15+ min) is separate from the 60s poll.
 
 `getBoardBook()`: bundled EQ seed, then Fyers live cached 24h. `preferNseThenBse()` for bare names. `chrome.alarms` (`fvDumpFirst`) retries the first Fyers dump if the live list is not ready.
 
@@ -167,6 +169,8 @@ Screener/Chartink: no TV API. Scan `table` links; `+` on rows; Current from URL.
 ## 9. Cloud
 
 Table `public.fv_list_book` (`user_id`, `book`, `updated_at`), RLS on. Auth user (not dashboard, not DB password). Worker `FV_CLOUD_HTTP` only to `*.supabase.co`. LWW via `updated_at` / `fvCloudBookAt`. Help: `help/index.html` (styles `help.css`, script `help.js`, pictures in `help/images/`).
+
+Probe the table only marks **Database not ready** on PostgREST missing-table errors. Transport fail (status 0, 5xx, failed fetch) is **Network issue**; `dbReady` is not cleared. Dead session is 401/403 / invalid refresh only. `cloud/diag.js` appends up to 500 events to `fvDiagLog`.
 
 ---
 
@@ -180,6 +184,7 @@ Table `public.fv_list_book` (`user_id`, `book`, `updated_at`), RLS on. Auth user
 | `fvDockMinimizedTv` / `fvDockMinimizedWeb` | Mini bar |
 | `fvPanelOnTradingView` / `Screener` / `Chartink` | Popup gates |
 | `fvCloudUrl`, `fvCloudPublishableKey`, `fvCloudEmail`, `fvCloudSession`, `fvCloudBookAt` | Cloud, no password |
+| `fvDiagLog` | Local cloud event log (**Log** download). No lists or tokens |
 | `fvBoardBookV6` | EQ dump cache |
 
 ---
@@ -288,7 +293,10 @@ Current → askCurrentListing → fv_request_symbol → page-bridge → fv_symbo
 **Cloud return**
 
 ```
-tab visible / load → cloud pull → remote updated_at newer than fvCloudBookAt? → replace fvListBook
+tab visible / load / [cloud] Sync (linked) → cloud pull → remote updated_at newer than fvCloudBookAt? → replace fvListBook
+Connect (first or 7-day gap, lists differ) → Use cloud / Keep this browser / Keep both
+Watchlist cloud line: short words + Sync. Network fail keeps the session (retry Sync). A failed probe does not store Database not ready. Dead refresh token → Not connected (Connect again).
+Restore Backup while linked → apply file locally → 2s push replaces cloud.
 ```
 
 Network goes through the worker. MV3 content scripts fetch with the page origin (CORS). The worker holds the host permissions.
@@ -329,9 +337,10 @@ All in `chrome.storage.local`. Add new keys to `persist/` and to this table.
 | `fvCloudUrl`, `fvCloudPublishableKey`, `fvCloudEmail` | string | `cloud` (Connect) | Delete Cloud Details |
 | `fvCloudSession` | Auth JSON from `/auth/v1/token` (includes `access_token`; FishView may set `dbReady`) | `cloud` | Disconnect (session + `fvCloudBookAt` only), Delete Cloud Details (URL, key, email, session, bookAt) |
 | `fvCloudBookAt` | remote `updated_at` string | `cloud` | Disconnect, Delete Cloud Details |
+| `fvDiagLog` | `{ events: [...] }` last 500 cloud events | `cloud` | Oldest dropped; uninstall |
 | `fvBoardBookV6` | `{ ts, map, live }` Fyers EQ book | `listings` / worker | Replaced after 24h live fetch |
 
-**Never stored:** cloud password, quotes.
+**Never stored:** cloud password, quotes, stock lists inside `fvDiagLog`.
 
 **Cloud table** (same SQL as **Copy Setup SQL** and the help page):
 
@@ -368,7 +377,7 @@ No automated suite. Manual, per release:
 
 | Area | Check |
 |---|---|
-| Dock | Mounts on www/in/es TradingView, Screener, Chartink; page pushed; clamps; × / double-click minimize; popup gate hides without a full reload |
+| Dock | Mounts on www/in/es TradingView, Screener, Chartink; page pushed; clamps; × / header click minimize; popup gate hides without a full reload |
 | Lists | 51st list refused; bad / duplicate name refused; 151st stock refused |
 | Labels | Label sort unlabeled last both ways; last filter tick stays; none → all on |
 | Bulk | 500ms long-press; 31st refused; copy/move add-what-fits, unlabeled |
@@ -411,10 +420,8 @@ No automated suite. Manual, per release:
 
 ---
 
-## 23. v1.0.0 vs later
+## 23. v1.0.0
 
 **v1.0.0** is the current release. Known issue: **Chartink website issue** on their chart window in Dark theme (stock row text). FishView offers **Use Chartink Day** on that screen only.
 
-**At publish:** dashboard screenshots (you will add them). Privacy URL and support email are set.
-
-**v2.0.0:** Cloud Backup and Cloud Restore. Until then the Cloud Backup control stays hidden.
+**At publish:** dashboard screenshots (you will add them). Privacy URL and support email are set. Cloud Backup stays hidden.

@@ -5,16 +5,21 @@ export const LIST_UI_CSS = `
   border: none !important;
   box-shadow: none !important;
 }
+#fv-docker-head {
+  cursor: pointer;
+}
 #fv-body.fv-watch .fv-head {
   flex-shrink: 0;
   position: relative;
-  z-index: 8;
+  z-index: 20;
+  overflow: visible;
 }
 .fv-table-wrap {
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
   position: relative;
+  z-index: 0;
   scrollbar-width: thin;
   scrollbar-color: #b4bac6 transparent;
 }
@@ -49,39 +54,68 @@ export const LIST_UI_CSS = `
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  column-gap: 8px;
+  row-gap: 2px;
   margin: 6px 0 0;
+  white-space: nowrap;
+}
+.fv-meta-counts,
+.fv-meta-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 .fv-filter-txt {
   font-weight: 700;
   color: var(--fv-fg);
 }
+.fv-filter-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
 .fv-filter-dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
+  min-width: 10px;
+  min-height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.25);
 }
 .fv-filter-none {
   width: 10px;
   height: 10px;
+  min-width: 10px;
+  min-height: 10px;
+  flex-shrink: 0;
   display: inline-block;
   vertical-align: middle;
 }
 .fv-table {
+  table-layout: fixed;
+  width: 100%;
   border-collapse: separate;
   border-spacing: 0;
 }
 .fv-table thead {
   position: sticky;
   top: 0;
-  z-index: 5;
+  z-index: 4;
+  background: #1c2030;
 }
 .fv-table thead th {
   position: sticky;
   top: 0;
-  z-index: 6;
+  z-index: 4;
   background: #1c2030;
+  background-clip: padding-box;
   box-shadow: inset 0 -1px 0 var(--fv-line);
 }
+#fv-shell[data-theme="light"] .fv-table thead,
 #fv-shell[data-theme="light"] .fv-table thead th {
   background: #eef1f6;
 }
@@ -91,34 +125,50 @@ export const LIST_UI_CSS = `
 }
 .fv-table thead th.fv-sort.on,
 .fv-table thead th.col-label.on {
-  background: rgba(246, 196, 69, 0.42) !important;
+  background: #3d3420 !important;
   color: #f6c445;
 }
 #fv-shell[data-theme="light"] .fv-table thead th.fv-sort.on,
 #fv-shell[data-theme="light"] .fv-table thead th.col-label.on {
-  background: rgba(246, 196, 69, 0.4) !important;
+  background: #efe4b0 !important;
   color: #5d4e00;
 }
 .fv-table tbody tr,
 .fv-table tbody td {
+  z-index: auto;
+}
+.fv-table tbody td.col-label {
   position: relative;
-  z-index: 0;
 }
 .fv-table tbody tr.fv-row-on {
   background: rgba(245, 196, 64, 0.2);
 }
+.fv-table .col-label {
+  width: 7%;
+  min-width: 0 !important;
+  max-width: none;
+  padding: 6px 1px !important;
+  text-align: center;
+  overflow: hidden;
+}
 .fv-table .col-name {
-  width: 30%;
-  min-width: 5em;
+  width: 42%;
+  min-width: 4.5em;
 }
 .fv-table .col-num {
-  width: 23%;
+  width: 18%;
+  min-width: 0;
 }
 .fv-table tbody td.col-num {
   text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .fv-table thead th.col-num {
   text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .fv-table tbody td.fv-up {
   color: #089981;
@@ -127,12 +177,6 @@ export const LIST_UI_CSS = `
 .fv-table tbody td.fv-down {
   color: #f23645;
   font-weight: 700;
-}
-.fv-table .col-label {
-  width: 28px;
-  max-width: 32px;
-  padding: 6px 4px !important;
-  text-align: center;
 }
 #fv-label-head {
   cursor: pointer;
@@ -143,6 +187,8 @@ export const LIST_UI_CSS = `
   gap: 2px;
   align-items: center;
   justify-content: center;
+  max-width: 100%;
+  overflow: hidden;
 }
 .fv-head-dot {
   width: 6px;
@@ -217,6 +263,9 @@ export const LIST_UI_CSS = `
 .fv-cloud-head.off {
   color: #e53935;
 }
+.fv-cloud-head.err {
+  color: #e53935;
+}
 .fv-cloud-head.on {
   color: #089981;
 }
@@ -229,28 +278,16 @@ export const LIST_UI_CSS = `
 }
 .fv-cloud #fv-help-cloud,
 .fv-cloud #fv-open-supabase,
-.fv-cloud #fv-copy-sql {
+.fv-cloud #fv-copy-sql,
+.fv-cloud #fv-dl-log {
   background: rgba(123, 97, 255, 0.45);
   color: #fff;
 }
 #fv-shell[data-theme="light"] .fv-cloud #fv-help-cloud,
 #fv-shell[data-theme="light"] .fv-cloud #fv-open-supabase,
-#fv-shell[data-theme="light"] .fv-cloud #fv-copy-sql {
+#fv-shell[data-theme="light"] .fv-cloud #fv-copy-sql,
+#fv-shell[data-theme="light"] .fv-cloud #fv-dl-log {
   background: #7b61ff;
-}
-.fv-cloud-help .fv-btn {
-  flex: 1 1 0;
-  min-width: 0;
-  width: auto;
-  height: auto;
-  min-height: 32px;
-  padding: 5px 6px;
-  font-size: 11px;
-  line-height: 1.2;
-  white-space: normal;
-  overflow: hidden;
-  text-align: center;
-  hyphens: none;
 }
 .fv-cloud-sql-note {
   margin: 8px 0 0;
@@ -290,8 +327,38 @@ export const LIST_UI_CSS = `
   background: #e53935;
   color: #fff;
 }
-.fv-cloud .fv-cloud-help {
+#fv-shell .fv-cloud .fv-cloud-help {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
   margin-top: 16px;
+  min-width: 0;
+}
+#fv-shell .fv-cloud-help .fv-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: none;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  min-height: 44px;
+  padding: 6px 8px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: normal;
+  overflow: hidden;
+  text-align: center;
+  overflow-wrap: break-word;
+  box-sizing: border-box;
+}
+#fv-shell .fv-cloud-help .fv-dl-ico {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
 }
 .fv-tools {
   display: flex;
@@ -353,9 +420,18 @@ export const LIST_UI_CSS = `
   border-radius: 10px;
   padding: 12px;
 }
+.fv-modal-anchor {
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+.fv-modal-anchor .fv-modal-card {
+  position: absolute;
+  margin: 0;
+  width: calc(100% - 16px);
+}
 .fv-modal-card p {
   margin: 0 0 10px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
 }
 .fv-modal-card input,
@@ -367,12 +443,17 @@ export const LIST_UI_CSS = `
   background: var(--fv-bg);
   color: var(--fv-fg);
   padding: 8px;
-  font-size: 13px;
+  font-size: 16px;
   font-family: inherit;
 }
 .fv-modal-card input {
+  height: 40px;
+  padding: 0 10px;
+}
+.fv-modal-actions .fv-btn {
+  flex: 1;
+  font-size: 14px;
   height: 36px;
-  padding: 0 8px;
 }
 .fv-modal-card textarea {
   min-height: 96px;
@@ -386,13 +467,21 @@ export const LIST_UI_CSS = `
 .fv-modal-actions.stack {
   flex-direction: column;
 }
-.fv-modal-actions .fv-btn {
-  flex: 1;
+.fv-cloud-sync-note {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fv-muted);
+  line-height: 1.45;
+  margin: 0 0 8px;
+  white-space: pre-line;
 }
 .fv-ctx {
   position: absolute;
   z-index: 50;
   width: 214px;
+  max-height: min(70vh, 100%);
+  overflow-x: hidden;
+  overflow-y: auto;
   background: var(--fv-bg);
   border: 1px solid var(--fv-line);
   border-radius: 10px;
@@ -537,6 +626,10 @@ export const LIST_UI_CSS = `
 }
 .fv-list-row {
   position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
 }
 .fv-lab-pop {
   position: absolute;
@@ -601,8 +694,8 @@ export const LIST_UI_CSS = `
   position: relative;
 }
 .fv-list-wrap {
-  flex: 1;
-  min-width: 0;
+  flex: 1 1 auto;
+  min-width: 5em;
   position: relative;
 }
 .fv-list-pick {
@@ -636,7 +729,7 @@ export const LIST_UI_CSS = `
   position: absolute;
   left: 0;
   right: 0;
-  top: 44px;
+  top: calc(100% + 2px);
   z-index: 48;
   background: var(--fv-bg);
   color: var(--fv-fg);
@@ -720,12 +813,27 @@ export const LIST_UI_CSS = `
 #fv-xfer-menu button {
   font-size: 16px;
 }
+.fv-menu-wrap {
+  position: relative;
+  overflow: visible;
+  z-index: 21;
+  flex: 0 1 auto;
+  min-width: 0;
+}
 .fv-menu {
-  z-index: 50;
+  z-index: 60;
+}
+.fv-phase {
+  margin: 0 0 6px;
+  line-height: 1.3;
 }
 .fv-phase-warn {
   color: #f77a4a;
   font-weight: 700;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 .fv-chartink-site {
   color: var(--fv-muted);
@@ -751,15 +859,47 @@ export const LIST_UI_CSS = `
 .fv-cloud-status.off {
   color: #e53935;
 }
+.fv-cloud-status.err {
+  color: #e53935;
+}
+.fv-cloud-status.on {
+  color: #089981;
+}
+.fv-cloud-status.busy {
+  color: #2962ff;
+}
+.fv-cloud-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin: 0 0 8px;
+}
+.fv-cloud-status {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 700;
+}
 #fv-body.fv-watch .fv-cloud-line .fv-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   flex: 0 0 auto;
   width: auto;
-  height: 1.35em;
-  min-height: 0;
+  max-width: none;
+  height: 22px;
+  min-height: 22px;
   padding: 0 8px;
-  font-size: inherit;
-  line-height: 1.35;
-  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 22px;
+  overflow: hidden;
+  white-space: nowrap;
 }
 #fv-body.fv-watch .fv-cloud-line .fv-btn .fv-cloud-ico {
   width: 1em !important;
@@ -793,26 +933,34 @@ export const LIST_UI_CSS = `
 #fv-shell[data-theme="light"] #fv-body.fv-watch .fv-local-io .fv-pill-file {
   background: #7b61ff;
 }
-.fv-local-io {
+#fv-shell .fv-local-io {
   display: flex;
   flex-direction: row;
   align-items: stretch;
   gap: 6px;
   width: 100%;
+  min-width: 0;
   margin: 0 0 8px;
 }
-.fv-local-io .fv-btn {
+#fv-shell .fv-local-io .fv-btn {
   flex: 1 1 0;
   width: auto;
   min-width: 0;
+  max-width: 100%;
   height: 22px;
   min-height: 22px;
+  max-height: 22px;
   padding: 0 6px;
   font-size: 11px;
   font-weight: 700;
   line-height: 22px;
   border-radius: 6px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  display: block;
+  box-sizing: border-box;
 }
 .fv-local-io .fv-pill-file {
   background: rgba(123, 97, 255, 0.45);
@@ -825,16 +973,25 @@ export const LIST_UI_CSS = `
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-wrap: nowrap;
   gap: 8px;
   margin: 0;
   padding: 14px 12px;
   min-height: 44px;
+  max-height: 44px;
   background: #5b8ef0;
   color: #fff;
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.01em;
   line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.fv-credit span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .fv-credit-sep {
   font-weight: 500;
@@ -996,5 +1153,147 @@ export const LIST_UI_CSS = `
   padding: 8px;
   border-radius: 8px;
   background: rgba(127, 127, 127, 0.12);
+}
+#fv-chrome {
+  container-type: inline-size;
+  container-name: fv-dock;
+}
+@container fv-dock (max-width: 340px) {
+  .fv-credit {
+    font-size: 11px;
+    padding: 6px 8px;
+    min-height: 28px;
+    max-height: 28px;
+    gap: 4px;
+  }
+  .fv-list-pick {
+    font-size: 12px;
+    height: 28px;
+  }
+  .fv-list-row .fv-icon {
+    flex: 0 0 28px !important;
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 14px !important;
+  }
+  #fv-list-new {
+    font-size: 18px !important;
+  }
+  .fv-table .col-label {
+    width: 5%;
+  }
+  .fv-head-dot {
+    width: 4px;
+    height: 4px;
+  }
+  .fv-filter-dot,
+  .fv-filter-none {
+    width: 10px !important;
+    height: 10px !important;
+    min-width: 10px !important;
+    min-height: 10px !important;
+  }
+  .fv-table tbody td.col-label .fv-dot {
+    width: 8px;
+    height: 8px;
+  }
+}
+@container fv-dock (max-width: 250px) {
+  .fv-credit {
+    font-size: 10px;
+    padding: 4px 6px;
+    min-height: 24px;
+    max-height: 24px;
+    gap: 4px;
+  }
+  .fv-list-pick {
+    font-size: 11px;
+    height: 24px;
+  }
+  .fv-list-row .fv-icon {
+    flex: 0 0 24px !important;
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 12px !important;
+  }
+  #fv-list-new {
+    font-size: 16px !important;
+  }
+  .fv-table .col-label {
+    width: 4%;
+  }
+  .fv-head-dot {
+    width: 3px;
+    height: 3px;
+  }
+  .fv-filter-dot,
+  .fv-filter-none {
+    width: 10px !important;
+    height: 10px !important;
+    min-width: 10px !important;
+    min-height: 10px !important;
+  }
+  .fv-table tbody td.col-label .fv-dot {
+    width: 7px;
+    height: 7px;
+  }
+  .fv-list-row .fv-icon .fv-cloud-ico {
+    width: 12px !important;
+    height: 12px !important;
+  }
+}
+#fv-shell[data-narrow="1"] .fv-docker-title,
+#fv-shell[data-narrow="1"] .fv-tab,
+#fv-shell[data-narrow="1"] .fv-theme,
+#fv-shell[data-narrow="1"] .fv-btn,
+#fv-shell[data-narrow="1"] .fv-list-pick-name,
+#fv-shell[data-narrow="1"] .fv-cloud-status {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+#fv-shell[data-narrow="1"] .fv-theme {
+  max-width: 4.8em;
+  padding: 4px 6px;
+  font-size: 11px;
+}
+#fv-shell[data-narrow="1"] .fv-actions {
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+}
+#fv-shell[data-narrow="1"] .fv-actions .fv-btn,
+#fv-shell[data-narrow="1"] .fv-actions .fv-menu-wrap {
+  flex: 1 1 0;
+  min-width: 0;
+}
+#fv-shell[data-narrow="1"] .fv-actions .fv-menu-wrap {
+  overflow: visible;
+}
+#fv-shell[data-narrow="1"] .fv-actions .fv-btn {
+  font-size: 11px;
+  padding: 4px 4px;
+}
+#fv-shell[data-narrow="1"] .fv-cloud-help .fv-btn {
+  overflow: hidden;
+  white-space: normal;
+  text-overflow: clip;
+  font-size: 14px;
+  padding: 6px 6px;
+}
+#fv-shell[data-narrow="1"] .fv-local-io .fv-btn {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 11px;
+  height: 22px;
+  min-height: 22px;
+  max-height: 22px;
+  line-height: 22px;
+  padding: 0 6px;
+}
+#fv-shell[data-narrow="1"] .fv-list-row .fv-btn {
+  overflow: hidden;
 }
 `;

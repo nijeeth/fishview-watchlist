@@ -11,6 +11,7 @@ export const WIDTH_WEB_KEY = "fvPanelWidthWeb";
 export const MINIMIZED_KEY = "fvDockMinimized";
 export const MINIMIZED_TV_KEY = "fvDockMinimizedTv";
 export const MINIMIZED_WEB_KEY = "fvDockMinimizedWeb";
+export const DIAG_KEY = "fvDiagLog";
 export const CLOUD_KEYS = {
   url: "fvCloudUrl",
   publishableKey: "fvCloudPublishableKey",

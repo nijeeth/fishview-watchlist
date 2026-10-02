@@ -1,6 +1,6 @@
 export const DOCK_TV_W = 350;
 export const DOCK_WEB_W = 200;
-export const DOCK_TV_MIN = 300;
+export const DOCK_TV_MIN = 220;
 export const DOCK_TV_MAX = 420;
 export const DOCK_WEB_MIN = 180;
 export const DOCK_WEB_MAX = 280;

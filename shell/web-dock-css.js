@@ -110,6 +110,9 @@ export const WEB_DOCK_CSS = `
 #fv-shell[data-compact="1"] .fv-phase {
   font-size: 10px;
 }
+#fv-shell[data-compact="1"] .fv-cloud-sync-note {
+  font-size: 10px;
+}
 #fv-shell[data-compact="1"] .fv-chartink-site {
   font-size: 10px;
 }
@@ -124,8 +127,13 @@ export const WEB_DOCK_CSS = `
 #fv-shell[data-compact="1"] .fv-local-io .fv-btn {
   height: 20px;
   min-height: 20px;
-  font-size: 10px;
+  max-height: 20px;
+  font-size: 11px;
   line-height: 20px;
+  padding: 0 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 #fv-shell[data-compact="1"] .fv-menu {
   top: 34px;
@@ -143,9 +151,11 @@ export const WEB_DOCK_CSS = `
   display: none !important;
 }
 #fv-shell[data-compact="1"] .fv-cloud-help .fv-btn {
-  min-height: 30px;
-  font-size: 10px;
-  padding: 4px 4px;
+  min-height: 40px;
+  max-height: none;
+  font-size: 11px;
+  padding: 5px 6px;
+  white-space: normal;
 }
 #fv-shell[data-compact="1"] .fv-cloud-sql-note {
   font-size: 14px;
@@ -169,8 +179,15 @@ export const WEB_DOCK_CSS = `
   font-size: 10px;
 }
 #fv-shell[data-compact="1"] .fv-list-drop {
-  top: 34px;
+  top: calc(100% + 2px);
   max-height: calc(8 * 32px);
+}
+#fv-shell[data-compact="1"] .fv-modal-card p {
+  font-size: 15px;
+}
+#fv-shell[data-compact="1"] .fv-modal-card input,
+#fv-shell[data-compact="1"] .fv-modal-card textarea {
+  font-size: 16px;
 }
 #fv-shell[data-compact="1"] .fv-list-opt {
   height: 32px;
@@ -190,9 +207,10 @@ export const WEB_DOCK_CSS = `
   font-size: 13px;
 }
 #fv-shell[data-compact="1"] .fv-credit {
-  font-size: 14px;
-  padding: 12px 10px;
-  min-height: 40px;
+  font-size: 11px;
+  padding: 6px 8px;
+  min-height: 28px;
+  max-height: 28px;
 }
 #fv-shell[data-compact="1"] .fv-quotes-load {
   font-size: 13px;

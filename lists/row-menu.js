@@ -23,10 +23,30 @@ export function openRowMenu({ panel, e, book, ex, ticker, applyBook }) {
   panel.querySelectorAll(".fv-ctx").forEach((m) => m.remove());
   const menu = document.createElement("div");
   menu.className = "fv-ctx";
-  const pr = panel.getBoundingClientRect();
-  menu.style.left = `${Math.max(6, Math.min(e.clientX - pr.left, pr.width - 220))}px`;
-  menu.style.top = `${Math.max(6, Math.min(e.clientY - pr.top, pr.height - 280))}px`;
+  const pr0 = panel.getBoundingClientRect();
+  menu.style.left = `${Math.max(6, e.clientX - pr0.left)}px`;
+  menu.style.top = `${Math.max(6, e.clientY - pr0.top)}px`;
   panel.appendChild(menu);
+
+  const placeMenu = () => {
+    const pr = panel.getBoundingClientRect();
+    const pad = 6;
+    const roomH = Math.max(80, pr.height - pad * 2);
+    const roomW = Math.max(80, pr.width - pad * 2);
+    menu.style.maxWidth = `${roomW}px`;
+    menu.style.maxHeight = `${roomH}px`;
+    const mw = menu.offsetWidth;
+    const mh = menu.offsetHeight;
+    let left = e.clientX - pr.left;
+    let top = e.clientY - pr.top;
+    if (left + mw > pr.width - pad) left = pr.width - mw - pad;
+    if (top + mh > pr.height - pad) top = e.clientY - pr.top - mh;
+    if (left < pad) left = pad;
+    if (top < pad) top = pad;
+    if (top + mh > pr.height - pad) top = Math.max(pad, pr.height - mh - pad);
+    menu.style.left = `${left}px`;
+    menu.style.top = `${top}px`;
+  };
 
   const current = book.lists
     .find((l) => l.id === book.activeId)
@@ -55,6 +75,7 @@ export function openRowMenu({ panel, e, book, ex, ticker, applyBook }) {
       <div class="fv-ctx-line"></div>
       <button type="button" class="fv-ctx-row danger" data-act="del-row">Delete From List</button>
     `;
+    placeMenu();
   };
 
   const renderPicker = (copy) => {
@@ -92,6 +113,7 @@ export function openRowMenu({ panel, e, book, ex, ticker, applyBook }) {
     `;
     const input = menu.querySelector(".fv-ctx-newin");
     if (input) isolateElement(input);
+    placeMenu();
   };
 
   renderMain();
@@ -141,6 +163,7 @@ export function openRowMenu({ panel, e, book, ex, ticker, applyBook }) {
         isolateElement(input);
         input.focus();
       }
+      placeMenu();
       return;
     }
     if (act === "move-to") {

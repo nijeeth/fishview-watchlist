@@ -52,7 +52,7 @@ Respect the existing product caps unless a change to them has been discussed fir
 - 5 symbols maximum for one paste/Add operation.
 - CSV import and Scan reject more than 150 stocks rather than partially adding them.
 
-Cloud Backup and Cloud Restore are planned for **v2.0.0**. In v1 the Cloud Backup control is hidden; Connect already syncs lists.
+The Cloud Backup control is hidden; Connect already syncs lists. Use Backup Local / Restore Backup for a file on this computer.
 
 New permissions, host permissions, analytics, tracking, remote code, or unrelated features need especially strong justification and prior discussion.
 
@@ -121,7 +121,7 @@ Follow these boundaries:
 - Use the `fv` namespace: storage keys begin with `fv`, the dock host is `#fv-root`, and page bridge events use `fv_*` names such as `fv_change_symbol` and `fv_request_symbol`.
 - Use `FV_*` for runtime message names, such as `FV_CLOUD_HTTP`.
 - Do not use `tvf_*`; FishView must coexist with Chart Funda.
-- Access `chrome.storage.local` keys through `persist/`. Important existing keys include `fvListBook`, `fvTheme`, `fvPanelWidthTv`, `fvPanelWidthWeb`, the per-site `fvPanelOn...` settings, cloud details, and `fvBoardBookV6`.
+- Access `chrome.storage.local` keys through `persist/`. Important existing keys include `fvListBook`, `fvTheme`, `fvPanelWidthTv`, `fvPanelWidthWeb`, the per-site `fvPanelOn...` settings, cloud details, `fvDiagLog`, and `fvBoardBookV6`.
 - Add any new storage key to `persist/` and to the storage documentation in `ARCHITECTURE.md`.
 - Never store the cloud password. Quotes are not stored.
 - Do not add analytics, advertising, or tracking.
@@ -143,7 +143,7 @@ When adding a site, update the manifest matches and host permissions, web-access
 
 There is no automated test suite described by the project. Before opening a pull request, run the relevant manual checks below and report what you tested:
 
-- [ ] **Dock:** It appears on TradingView, Screener.in, and Chartink; pushes the page; clamps to TV 300–420 px and web 180–280 px; `×` and header double-click minimise; each popup toggle hides the dock on its site.
+- [ ] **Dock:** It appears on TradingView, Screener.in, and Chartink; pushes the page; clamps to TV 220–420 px and web 180–280 px; `×` and header click minimise; each popup toggle hides the dock on its site.
 - [ ] **Lists:** Create, rename, and delete lists. The 51st list is refused. Invalid and duplicate names are refused. The 151st stock is refused.
 - [ ] **Labels, sort, and filter:** Label sorting keeps unlabeled rows last in both directions. The last filter tick cannot be removed. Closing a filter with none selected restores all labels.
 - [ ] **Bulk:** A 500 ms long-press enters batch mode. The 31st selection is refused. Copy and move add only what fits and arrive unlabeled.
@@ -151,7 +151,7 @@ There is no automated test suite described by the project. Before opening a pull
 - [ ] **Sites:** Scan with more than 150 results adds nothing. Row `+` works. Current works from a Screener.in company URL and a Chartink stock URL.
 - [ ] **Charts:** Row click switches TradingView without reloading. Current on a US stock stores `NASDAQ:` or `NYSE:`, never `BATS`, `CBOE`, or `CBOEONE`.
 - [ ] **Quotes:** Quotes appear only for the open list. Other lists are not fetched until opened. Nothing is polled with the dock closed. Refresh retries.
-- [ ] **Backup:** Backup Local and Restore Backup round-trip all lists and labels, and restore overwrites the current data. Cloud Backup / Cloud Restore are v2 (hidden in v1).
+- [ ] **Backup:** Backup Local and Restore Backup round-trip all lists and labels, and restore overwrites the current data. The Cloud Backup control stays hidden.
 - [ ] **Cloud:** With two browsers and the same Auth user, lists sync about two seconds after an edit and pull on return. Status and messages appear on the correct tabs. Delete Cloud Details clears URL, key, email, and session. The password never appears in `chrome.storage.local`.
 - [ ] **Help:** Help opens from the Cloud tab, follows `fvTheme`, and Copy Setup SQL works.
 - [ ] **Coexistence:** FishView works with Chart Funda installed.

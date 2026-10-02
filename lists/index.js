@@ -12,6 +12,8 @@ export {
   parseSymbol,
   canonicalExchange,
   normalizeBook,
+  bookFingerprint,
+  mergeKeepBoth,
   loadBook,
   saveBook,
   activeList,

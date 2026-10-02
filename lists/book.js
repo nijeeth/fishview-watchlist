@@ -165,6 +165,56 @@ export function parseSymbol(raw) {
   return { exchange: "NSE", ticker: cleanTicker(s) };
 }
 
+export function bookFingerprint(raw) {
+  const b = normalizeBook(raw, { fallbackDefault: false });
+  return JSON.stringify(
+    listsByName(b.lists).map((l) => ({
+      n: String(l.name || "").trim().toLowerCase(),
+      s: l.stocks.map((x) => `${x.exchange}:${x.ticker}:${x.label || ""}`).sort(),
+    }))
+  );
+}
+
+/** Local first. Same list name unions stocks (local label wins). Caps: skip leftovers. */
+export function mergeKeepBoth(localRaw, remoteRaw) {
+  const local = normalizeBook(localRaw, { fallbackDefault: false });
+  const remote = normalizeBook(remoteRaw, { fallbackDefault: false });
+  let skippedStocks = 0;
+  let skippedLists = 0;
+  const lists = local.lists.map((l) => ({ ...l, stocks: l.stocks.map((s) => ({ ...s })) }));
+  const byName = new Map(lists.map((l) => [String(l.name || "").trim().toLowerCase(), l]));
+  for (const rl of remote.lists) {
+    const key = String(rl.name || "").trim().toLowerCase();
+    const dest = byName.get(key);
+    if (dest) {
+      const have = new Set(dest.stocks.map((s) => `${s.exchange}:${s.ticker}`));
+      for (const s of rl.stocks) {
+        const k = `${s.exchange}:${s.ticker}`;
+        if (have.has(k)) continue;
+        if (dest.stocks.length >= STOCK_CAP) {
+          skippedStocks += 1;
+          continue;
+        }
+        dest.stocks.push({ exchange: s.exchange, ticker: s.ticker, label: s.label });
+        have.add(k);
+      }
+    } else if (lists.length >= LIST_CAP) {
+      skippedLists += 1;
+    } else {
+      if (rl.stocks.length > STOCK_CAP) skippedStocks += rl.stocks.length - STOCK_CAP;
+      const copy = {
+        id: newId(),
+        name: rl.name,
+        stocks: rl.stocks.slice(0, STOCK_CAP).map((s) => ({ exchange: s.exchange, ticker: s.ticker, label: s.label })),
+      };
+      lists.push(copy);
+      byName.set(key, copy);
+    }
+  }
+  const book = normalizeBook({ ...local, lists, activeId: local.activeId }, { fallbackDefault: false });
+  return { book, skippedStocks, skippedLists };
+}
+
 export function normalizeBook(raw, opts = {}) {
   const base = defaultBook();
   if (!raw || typeof raw !== "object") {

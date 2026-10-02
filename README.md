@@ -8,7 +8,7 @@
 **Privacy policy:** [https://sites.google.com/view/fishviewwatchlist-privacy](https://sites.google.com/view/fishviewwatchlist-privacy) · [PRIVACY.md](./PRIVACY.md)
 
 - Architecture: [ARCHITECTURE.md](./ARCHITECTURE.md)
-- v1 shipped list: [PHASES.md](./PHASES.md)
+- What’s in this version: [PHASES.md](./PHASES.md)
 - What’s new in this version: [WHATSNEW.md](./WHATSNEW.md)
 - Version history: [CHANGELOG.md](./CHANGELOG.md)
 - Contributing: [CONTRIBUTING.md](./CONTRIBUTING.md)
@@ -54,11 +54,12 @@ Everything is saved in your browser by default. You can also sync your lists to 
 
 ### Dock
 - Right-side dock that **pushes** the page instead of covering it.
-- **Watchlist** and **Cloud** tabs.
-- **Resizable** by dragging the **left edge**. TradingView and Screener/Chartink widths are remembered separately.
-- **Minimise** with the **×** button or by double-clicking the header. The dock shrinks to a mini bar.
+- **Watchlist** and **Cloud** tabs. The Watchlist cloud line shows a cloud icon, short status words, and **Sync**.
+- **Resizable** by dragging the **left edge**. TradingView **220–420** px (default 350); Screener/Chartink **180–280** px (default 200), remembered separately. Below ~300 px on TradingView, pills shrink type (`data-narrow`) instead of wrapping taller.
+- **Minimise** with the **×** button or by clicking the blue header. The dock shrinks to a mini bar. Click the mini bar to restore.
 - **Night / Day** in the dock header. The Help page follows this setting.
 - A compact layout (smaller text) on Screener.in and Chartink.
+- Narrow dock: File **Import/Export** still opens; column headers stay opaque over scrolling rows. **Filter Applied** colour dots stay **10px**.
 - **Turn the dock on or off per site** from the toolbar popup (no page reload required).
 
 ### Lists
@@ -94,7 +95,7 @@ Everything is saved in your browser by default. You can also sync your lists to 
 - Sync your lists to **your own Supabase project**. FishView has no server.
 - Your password is typed to connect and **never stored**.
 - Changes sync about **2 seconds** after you edit. The latest copy is pulled when you come back to the tab.
-- **Cloud Backup** and **Cloud Restore** are planned for **v2.0.0**. In v1 the Cloud Backup control is **hidden**. Use **Connect** to sync, and **Backup Local** / **Restore Backup** for a file on this computer.
+- **Cloud Backup** is **hidden** (not offered). Use **Connect** to sync, and **Backup Local** / **Restore Backup** for a file on this computer.
 
 ---
 
@@ -112,7 +113,7 @@ The dock loads only in the main page, not inside embedded frames. Chart switchin
 
 ## Screenshots
 
-Store screenshots (1280×800 or 640×400) are added at publish time. Promo tiles for the dashboard are in `store/`.
+Store screenshots (1280×800 or 640×400) and promo tiles go in `screenshots/` and `store/` (gitignored; upload in the dashboard, omit from the CRX). **Keep `help/` in git and in the zip** — Cloud tab Help needs those files.
 
 ---
 
@@ -152,7 +153,7 @@ After the listing is live, add that URL here. Until then, use [Load unpacked](#l
 | Action | How |
 |---|---|
 | Show or hide the dock on a site | Click the FishView toolbar icon (under the puzzle-piece menu, or pinned). Turn each site on or off in the popup. The dock hides or shows **without** reloading the page. |
-| Minimise / restore | Click **×** or **double-click the header**. The dock shrinks to a mini bar. TradingView and Screener/Chartink remember this separately. |
+| Minimise / restore | Click **×** or the **blue header**. The dock shrinks to a mini bar. Click the bar to restore. TradingView and Screener/Chartink remember this separately. |
 | Resize | Drag the **left edge** of the dock (`#fv-resize`). |
 | Switch tabs | **Watchlist** and **Cloud** |
 | Theme | **Night / Day** in the dock **header**. The setting is saved and the Help page follows it. |
@@ -161,7 +162,7 @@ After the listing is live, add that URL here. Until then, use [Load unpacked](#l
 
 | Site | Default width | Allowed range | Text size |
 |---|---|---|---|
-| TradingView | 350 px | 300–420 px | 14 px |
+| TradingView | 350 px | 220–420 px | 14 px (buttons ellipsis below 300 px) |
 | Screener.in / Chartink (shared) | 200 px | 180–280 px | 11 px (compact) |
 
 ### Lists
@@ -175,7 +176,7 @@ After the listing is live, add that URL here. Until then, use [Load unpacked](#l
 
 ### Labels
 
-- **Right-click a row** to choose **green, blue, orange, red**, or clear the label.
+- **Right-click a row** to choose **green, blue, orange, red**, or clear the label. Near the bottom of the dock the menu moves up so every item stays on screen.
 - Rows that are **copied or moved** to another list arrive **unlabeled**.
 
 ### Sort and filter
@@ -222,7 +223,7 @@ After CSV import or Scan, FishView may ask whether to save a **text import log**
 ### Backup and restore (local)
 
 - **Backup Local** saves one JSON file with **all lists and labels**.
-- **Restore Backup** loads such a file and **replaces everything** currently in FishView. Back up first if you are unsure.
+- **Restore Backup** loads such a file and **replaces everything** currently in FishView. Back up first if you are unsure. If cloud sync is **linked**, about **2 seconds** later that restored book is **uploaded and replaces the cloud copy** (no Use-cloud popup).
 
 ### Quotes
 
@@ -230,6 +231,7 @@ After CSV import or Scan, FishView may ask whether to save a **text import log**
 - Updated from Yahoo **every 60 seconds**. **Not realtime.** Quotes are not saved.
 - Indices show `-` for market cap. F&O and unrecognised symbols show `-`.
 - Use the header **refresh** icon to retry the open list.
+- The Watchlist caution line is **Careful: Not realtime. Prices from Yahoo every 60s** (at most two lines when the dock is narrow).
 - Nothing is fetched while the dock is closed.
 
 ---
@@ -242,7 +244,7 @@ Cloud sync keeps a copy of your watchlists in **your own Supabase project**. Sup
 
 - **User-owned:** you create the Supabase project yourself. FishView has no server, doesn't host your stocks and can't see your database.
 - **One table:** `public.fv_list_book` holds **one row per login**, containing your whole list book (all lists, stocks and labels). Row Level Security (RLS) means each login can only read and write its own row.
-- **Sync:** about **2 seconds** after you change a list, the new copy is saved to your project. When you return to the tab, or on load, FishView pulls the cloud copy if it is newer. **The newest copy wins** (last-write-wins).
+- **Sync:** about **2 seconds** after you change a list, the new copy is saved to your project (no extra “pending” status). When you return to the tab, or on load, FishView pulls the cloud copy if it is newer. The Watchlist **cloud line** shows a cloud icon, short words (no “Cloud” prefix), and **Sync** (refresh). **The newest copy wins** (last-write-wins). First Connect or a 7-day gap can ask Use cloud / Keep this browser / Keep both. **Restore Backup** while linked replaces this browser, then about 2 seconds later uploads and replaces the cloud copy.
 
 ### How to set it up
 
@@ -255,7 +257,7 @@ Follow the built-in picture guide: **Cloud tab → Help** (the file is [`help/in
 5. Copy the **API URL** and the **Publishable key** (steps 12–15)
 6. Paste them into the Cloud tab as **Supabase URL**, **Publishable key**, **Email** and **Password**, then click **Connect** (steps 16–17)
 
-When it works, the dock shows a connected status. Before that, it shows **Cloud: Not configured** on the Watchlist tab and **Cloud not configured** in red on the Cloud tab.
+When it works, the Watchlist cloud line says **Connected** (and **Link Established** right after Connect). The Cloud tab still uses **Cloud connected** / **Cloud Link Established**. Empty URL/key/email: **Not configured**. Details saved but no session: **Not connected**. Signed in but table missing: **Database not ready** — run **Copy Setup SQL**. In-flight: **Connecting…**. Transport fail with session kept: **Network issue** — use **Sync**, not Connect. After the network is back, **Sync** should reconnect without asking for the password. Token rejected: **Not connected** — Connect again with password.
 
 ### Cloud tab buttons
 
@@ -266,11 +268,16 @@ When it works, the dock shows a connected status. Before that, it shows **Cloud:
 | **Open Supabase** | Opens this project in the Supabase dashboard |
 | **Help** | Opens the setup guide |
 | **Copy Setup SQL** | Copies the SQL that creates the `fv_list_book` table and its RLS policies |
+| **Log** | Downloads a `.txt` of local cloud events (HTTP status, connect/sync/restore). No lists, stocks, password, or tokens. If Cloud is not configured and nothing was logged, no file. After download: mail the file to nijeethfish@gmail.com if there is an issue. |
 | **Delete Cloud Details** | Removes the saved URL, key, email and session from **this browser only**. Your Supabase project and the lists stored in it are not touched. |
 
 Messages about connecting, disconnecting or deleting show **only on the Cloud tab** for about 8 seconds.
 
-**Cloud Backup** (and Cloud Restore) ship in **v2.0.0**. The button exists in the Cloud tab but is **hidden** in v1 so it is not shown as a dead control. **Connect** already syncs lists. For a file copy on this computer, use Watchlist **Backup Local** / **Restore Backup**.
+The Cloud tab help controls are a **2×2** grid: Open Supabase, Help, Copy Setup SQL, **Log**.
+
+**Connect** may show three choices if this browser and the cloud copy differ (first Connect, or last sync **7 days** or older). **Use cloud** replaces this browser. **Keep this browser** uploads and replaces cloud. **Keep both** merges (same list name unions stocks; extra cloud lists are added; over 50 lists or 150 stocks, leftovers are skipped). Matching books skip the popup. Within 7 days, last-write-wins pull applies without the popup.
+
+**Cloud Backup** is in the Cloud tab markup but **hidden**, so it is not shown as a dead control. **Connect** already syncs lists. For a file copy on this computer, use Watchlist **Backup Local** / **Restore Backup**.
 
 ### Security notes
 
@@ -301,7 +308,7 @@ Messages about connecting, disconnecting or deleting show **only on the Cloud ta
 | Row identity | Exchange + ticker |
 | Bare names | Matched to NSE first, then BSE |
 | Quotes | Open list only, every 60 s, not realtime, not saved |
-| Dock width | TradingView 300–420 px, Screener/Chartink 180–280 px |
+| Dock width | TradingView 220–420 px, Screener/Chartink 180–280 px |
 | Cloud sync | About 2 s after an edit. Newest copy wins. |
 | Local restore | Replaces all lists and labels |
 
@@ -327,6 +334,7 @@ FishView is **local-first**. There is **no FishView server**. The manifest's net
 | `fvCloudUrl`, `fvCloudPublishableKey`, `fvCloudEmail` | Cloud details you entered (only if you use cloud) |
 | `fvCloudSession` | Your Supabase login session (only while connected). **Your password is never stored.** |
 | `fvCloudBookAt` | Time of the last cloud copy, used to decide which copy is newer |
+| `fvDiagLog` | Last **500** cloud events on this computer (status codes, connect/sync). No lists, stocks, password, or tokens. Cloud tab **Log** downloads a `.txt`. |
 | `fvBoardBookV6` | Cached public list of NSE/BSE equity symbols |
 
 Quotes are **not** stored. Uninstalling the extension removes this storage. **Delete Cloud Details** removes the cloud keys.
@@ -355,7 +363,7 @@ The Help page is packaged with the extension and loads no remote scripts, fonts 
 
 | Permission | Why FishView needs it |
 |---|---|
-| `storage` | Saves your lists, labels, theme, dock width and minimised state, per-site on/off settings, cloud connection details (never your password) and a cached NSE/BSE symbol list, all in `chrome.storage.local`. |
+| `storage` | Saves your lists, labels, theme, dock width and minimised state, per-site on/off settings, cloud connection details (never your password), a short local cloud event log (no lists or tokens), and a cached NSE/BSE symbol list, all in `chrome.storage.local`. |
 | `alarms` | Retries the first Fyers NSE/BSE dump if it is not ready (`fvDumpFirst`). The 60 s quote cycle is an in-page timer, not this permission. |
 
 `scripting` is **not** requested. Content scripts are declared statically in `manifest.json`.
@@ -510,7 +518,7 @@ The source files don't describe a build step. The extension loads directly from 
 
 No automated test suite. Use this manual checklist from `PHASES.md` and `ARCHITECTURE.md`:
 
-- [ ] **Dock:** it appears on TradingView (www/in/es), Screener.in and Chartink and pushes the page. Resize is clamped (TV 300–420, web 180–280). × and header double-click minimise. Each popup toggle hides the dock on its site without a full reload.
+- [ ] **Dock:** it appears on TradingView (www/in/es), Screener.in and Chartink and pushes the page. Resize is clamped (TV 220–420, web 180–280). × and header click minimise. Each popup toggle hides the dock on its site without a full reload.
 - [ ] **Lists:** create, rename and delete. The 51st list is refused. Invalid or duplicate names are refused. The 151st stock is refused.
 - [ ] **Labels / sort / filter:** label sort puts unlabeled rows last in both directions. The last filter tick can't be removed. Closing the filter with none ticked restores all.
 - [ ] **Bulk:** a 500 ms long-press enters batch mode. The 31st selection is refused. Copy/move adds what fits and arrives unlabeled.
@@ -533,7 +541,7 @@ No automated test suite. Use this manual checklist from `PHASES.md` and `ARCHITE
    ```bash
    VERSION=$(python3 -c "import json;print(json.load(open('manifest.json'))['version'])")
    zip -r "fishview-watchlist-$VERSION.zip" . \
-     -x '.git/*' '.github/*' '*.zip' '.DS_Store' 'store/*'
+     -x '.git/*' '.github/*' '*.zip' '.DS_Store' '.gitignore' 'store/*' 'screenshots/*'
    ```
 
 5. Test the zip: unzip it into a clean folder, **Load unpacked**, and run the checklist above.
@@ -570,18 +578,24 @@ See **[CONTRIBUTING.md](./CONTRIBUTING.md)**.
 
 ## Appendix: Chrome Web Store listing copy
 
-### Short description (131 / 132 characters)
+### Short description (114 / 132 characters)
+
+Chrome Web Store rejected a draft for **excessive keywords** (do not list TradingView, Screener.in and Chartink together, or stack Yahoo / Supabase / Fyers).
 
 ```
-Stock watchlist dock beside TradingView, Screener.in and Chartink: lists, colour labels, CSV import, delayed quotes, optional sync.
+A stock watchlist dock beside your chart or screener. Lists stay on this computer. Delayed quotes. Optional sync.
 ```
 
 This line is already the `manifest.json` `"description"`. The Web Store uses it as the summary.
 
 ### Detailed description
 
+Paste this into the store **Description** field. **Do not name the three host sites in the listing.** Hosts stay in permission justifications and in the extension UI.
+
 ```
-FishView Watchlist adds a stock watchlist panel to the right side of TradingView, Screener.in and Chartink. The panel pushes the page aside instead of covering it, so your chart or screener stays fully visible.
+FishView Watchlist is a stock watchlist in a side panel. On the chart and screener pages it supports, the panel sits on the right and pushes the page aside instead of covering it, so the chart or table stays fully visible.
+
+The toolbar popup turns the panel on or off for each supported site. The extension does not run on other websites.
 
 LISTS
 • Up to 50 watchlists with up to 150 stocks each
@@ -590,53 +604,56 @@ LISTS
 • Bulk select up to 30 rows to label, copy, move or delete
 • Local backup and restore of all lists as a JSON file
 
-ADD STOCKS FAST
+ADD STOCKS
 • Paste up to 5 symbols at once (comma-separated; bare names are matched NSE first, then BSE)
 • Import a CSV of NSE: / BSE: symbols into a new list, and export the open list to CSV
-• Scan a Screener.in or Chartink results table, or use the + button beside a row
-• "Current" adds the stock you are viewing
+• Scan a results table on a supported screener, or use the + button beside a row
+• Current adds the stock you are viewing
 
-TRADINGVIEW
-• Click a row to switch the chart in the same tab, without reloading the page
+CHART
+• Click a row to switch the symbol in the same tab, without reloading the page
 • US stocks are saved with their NASDAQ: / NYSE: symbol
 
 QUOTES
-• Price, % change and market cap for the open list, refreshed every 60 seconds from Yahoo Finance
+• Price, % change and market cap for the list you have open, refreshed about every 60 seconds
 • Quotes are delayed and not realtime
 
-OPTIONAL CLOUD SYNC, ON YOUR OWN ACCOUNT
-• Sync lists between computers using your own free Supabase project
-• FishView has no server of its own, so your lists go only to the project you create
-• Your password is typed to connect and never stored
+OPTIONAL CLOUD SYNC
+• Sync lists between computers using a database project you create and control
+• FishView has no server of its own
+• The password is typed to connect and is never stored
 • A step-by-step picture guide is built in
 
 PRIVACY
 • Local-first: lists are saved in your browser
 • No analytics, no ads, no tracking
-• Turn the panel on or off for each site from the toolbar popup
 
-FishView Watchlist is not financial advice. It is not affiliated with TradingView, Screener.in, Chartink, Yahoo, Supabase or Fyers.
+FishView Watchlist is not financial advice. It is not affiliated with, endorsed by or sponsored by the websites it runs on or the third-party services it contacts for quotes, symbols and optional sync.
 ```
 
 ### Single-purpose statement
 
+Do **not** list the three host sites or other product brands here (same rejection as the listing description).
+
 ```
-FishView Watchlist provides one feature: a stock watchlist panel docked beside TradingView, Screener.in and Chartink pages, where users keep, organise and add to lists of stocks, see delayed quotes for the open list, and optionally sync those lists to their own Supabase project.
+FishView Watchlist provides one feature: a stock watchlist panel on supported chart and screener pages, where users keep and organise lists of stocks, see delayed quotes for the open list, and optionally sync those lists to a database project they own.
 ```
 
 ### Permission justifications (dashboard fields)
 
+Host fields **must** name the URLs. That is not the listing description. No new hosts were added for Log download, Connect choice, or dock UX (those use existing storage and the same cloud host).
+
 | Field | Justification text |
 |---|---|
-| `storage` | Saves the user's watchlists, labels, theme, panel width and minimised state, per-site on/off settings, optional cloud connection details (never the password), and a cached public NSE/BSE symbol list in chrome.storage.local. |
-| `alarms` | Retries downloading Fyers' public NSE/BSE equity symbol list on first install if the live dump is not ready yet (alarm name fvDumpFirst). Quote refresh uses an in-page timer, not this permission. |
-| Host: TradingView (`www.`, `in.`, `es.`) | Draws the watchlist panel beside the chart and runs a small page script that switches the chart symbol when the user clicks a watchlist row, and reads the current symbol when the user clicks "Current". |
-| Host: Screener.in (`www.`, bare) | Draws the watchlist panel and lets the user add stocks from the page (Scan the results table, + on a row, Current from the company page URL). |
-| Host: Chartink (`www.`, bare) | Draws the watchlist panel and lets the user add stocks from the page (Scan the results table, + on a row, Current from the stock page URL). |
-| Host: `public.fyers.in` | Downloads Fyers' public NSE/BSE equity symbol list (cached 24 hours) so typed or pasted names resolve to the correct exchange. No user data is sent. |
-| Host: `query1/query2.finance.yahoo.com`, `fc.yahoo.com`, `finance.yahoo.com` | Fetches delayed price, % change and market cap for the stocks in the open watchlist every 60 seconds. `fc.yahoo.com` / `finance.yahoo.com` provide the cookie/crumb Yahoo's quote endpoints require. |
-| Host: `*.supabase.co` | Optional, user-initiated sync with the user's own Supabase project. The wildcard is required because each project has its own subdomain. It is contacted only after the user enters their project URL and clicks Connect. |
-| Remote code | No. All JavaScript is packaged with the extension. Network responses from Yahoo, Fyers and Supabase are data (JSON / symbol lists) and are never executed. |
+| `storage` | Stores the user's watchlists, labels, display settings (theme, dock width, minimised state, per-site on/off), optional cloud details (never the password), a short local log of cloud events (no lists or tokens), and a cached public NSE/BSE symbol list in chrome.storage.local on their device. |
+| `alarms` | Retries downloading a public NSE/BSE equity symbol list on first install if the live dump is not ready yet (alarm name fvDumpFirst). Quote refresh uses an in-page timer, not this permission. Does not read or send user data by itself. |
+| Host: `https://www.tradingview.com/*`, `https://in.tradingview.com/*`, `https://es.tradingview.com/*` | Dock, switch chart on row click, Current reads the chart symbol. |
+| Host: `https://www.screener.in/*`, `https://screener.in/*` | Dock, Scan, row +, Current from the page URL. |
+| Host: `https://chartink.com/*`, `https://www.chartink.com/*` | Dock, Scan, row +, Current from the page URL. |
+| Host: `https://public.fyers.in/*` | Public NSE/BSE symbol list (cached 24h) to match names to an exchange. No user data sent. |
+| Host: `https://query1.finance.yahoo.com/*`, `https://query2.finance.yahoo.com/*`, `https://fc.yahoo.com/*`, `https://finance.yahoo.com/*` | Delayed quotes for the open list; cookie/crumb for those requests. |
+| Host: `https://*.supabase.co/*` | Optional sync to the user's own project after Connect. Wildcard because each project has its own subdomain. Unused if cloud is off. |
+| Remote code | No. All JavaScript is packaged with the extension. Network responses are treated as data and never executed. |
 
 Do **not** declare or justify `scripting`.
 

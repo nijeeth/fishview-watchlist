@@ -4,7 +4,7 @@
 
 **Effective date:** September 29, 2026
 
-**Last updated:** September 29, 2026
+**Last updated:** September 30, 2026
 
 **Published page:** [https://sites.google.com/view/fishviewwatchlist-privacy](https://sites.google.com/view/fishviewwatchlist-privacy)
 
@@ -53,6 +53,7 @@ FishView saves the following in Chrome's local extension storage (`chrome.storag
 - **Display settings:** Day or Night theme, the width of the dock, whether the dock is minimised, and whether the dock is switched on for TradingView, Screener.in and Chartink.
 - **A cached list of public stock symbols:** the public NSE/BSE equity symbol list from Fyers, used to match stock names to the right exchange. It contains no personal information.
 - **Cloud sync details (only if you use cloud sync):** your Supabase project URL, your project's publishable key, the email address of the login you created in your Supabase project, your Supabase login session, and the time of the last cloud copy (used to decide which copy is newer).
+- **A short diagnostic log (`fvDiagLog`):** recent cloud events on this device (for example Connect, Sync, HTTP status). It does not include your watchlists, stock symbols, password, or access tokens. It stays on this computer unless you use **Log** to download a text file and send it yourself (for example by email). If Cloud is not configured and no events were recorded, there is no log file.
 
 **Your cloud password is never stored.** You type it only to connect.
 
@@ -106,7 +107,7 @@ FishView is installed and updated through the Chrome Web Store, which is run by 
 
 ## Permissions and why they are needed
 
-- **storage:** saves your watchlists, labels, display settings, per-site on/off settings, optional cloud details (never your password) and the cached public symbol list on your device.
+- **storage:** saves your watchlists, labels, display settings, per-site on/off settings, optional cloud details (never your password), a short local diagnostic log of cloud events (no lists or tokens), and the cached public symbol list on your device.
 - **alarms:** lets the extension schedule its own background tasks with Chrome's timer feature. It does not give access to any of your data.
 - **Access to TradingView (www., in., and es. tradingview.com):** to show the dock, switch the chart when you click a stock, and read the current chart symbol for **Current**.
 - **Access to Screener.in and Chartink:** to show the dock and support **Scan**, the "+" buttons and **Current**.

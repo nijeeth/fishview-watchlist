@@ -61,7 +61,7 @@ import {
   placeholderMessage as ingestHint,
 } from "../ingest/index.js";
 import { placeholderMessage as quoteHint, quotesForOpenListOnly, quotesNeedLivePoll } from "../quotes/index.js";
-import { placeholderMessage as cloudHint, cloudStatus, connectCloud, disconnectCloud, deleteCloudDetails, copySetupSql, scheduleCloudPush, pullCloudBook } from "../cloud/index.js";
+import { placeholderMessage as cloudHint, cloudStatus, onCloudSync, connectCloud, disconnectCloud, deleteCloudDetails, copySetupSql, copyDiagReport, diagLogState, diagLogFileName, noteDiag, scheduleCloudPush, pullCloudBook, resolveCloudOnConnect } from "../cloud/index.js";
 import { placeholderMessage as chartHint } from "../sites/charts/index.js";
 import {
   get,
@@ -97,6 +97,7 @@ let releaseDockKeys = null;
 
 const CLOUD_ICON = `<svg class="fv-cloud-ico" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96Z"/></svg>`;
 const REFRESH_ICON = `<svg class="fv-cloud-ico" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.65 6.35A7.95 7.95 0 0 0 12 4V1L7 6l5 5V7c2.76 0 5 2.24 5 5a5 5 0 0 1-8.9 3.1L6.7 16.5A7.96 7.96 0 0 0 12 20c4.42 0 8-3.58 8-8 0-2.21-.9-4.21-2.35-5.65Z"/></svg>`;
+const DL_ICON = `<svg class="fv-dl-ico" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>`;
 
 function $(sel, root) {
   return root.querySelector(sel);
@@ -202,6 +203,10 @@ export async function mountPanel() {
     return String(n.getAttribute("data-tip") || n.getAttribute("title") || "").trim();
   }
   shell.addEventListener("pointermove", (e) => {
+    if (shell.querySelector(".fv-menu:not([hidden]), .fv-ctx, #fv-list-drop:not([hidden])")) {
+      hideTip();
+      return;
+    }
     const hits = typeof shadow.elementsFromPoint === "function" ? shadow.elementsFromPoint(e.clientX, e.clientY) : [];
     let el = null;
     let text = "";
@@ -279,6 +284,8 @@ export async function mountPanel() {
   let cloudNoticeOk = false;
   let cloudNoticeBusy = false;
   let cloudNoticeTimer = null;
+  let cloudPullBusy = false;
+  let stopCloudSync = null;
 
   function hideLabelPop() {
     keepLabelPop = false;
@@ -532,6 +539,38 @@ export async function mountPanel() {
       scheduleQuotes();
     }
   }
+
+  function armNoticeClear() {
+    clearNoticeTimer();
+    noticeTimer = window.setTimeout(() => {
+      noticeTimer = null;
+      notice = "";
+      noticeBusy = false;
+      if (tab === "watchlist") paint();
+    }, 8000);
+  }
+
+  async function refreshFromCloud() {
+    if (minimized || cloudPullBusy) return;
+    const st = await cloudStatus();
+    if (!st.canSync) return;
+    cloudPullBusy = true;
+    await paint();
+    try {
+      const res = await pullCloudBook(book);
+      if (res.book) book = res.book;
+      if (!res.ok && tab === "cloud") setCloudNotice(res.error || "Network issue", false);
+      await paint();
+      if (res.ok && res.pulled) scheduleQuotes();
+    } finally {
+      cloudPullBusy = false;
+      await paint();
+    }
+  }
+
+  stopCloudSync = onCloudSync(() => {
+    void paint();
+  });
   let stopPlus = null;
   if (phaseLive(5) && kind === "screener") stopPlus = startScreenerPlus();
   let stopChartinkTheme = null;
@@ -567,12 +606,13 @@ export async function mountPanel() {
       clearTimeout(cloudNoticeTimer);
       cloudNoticeTimer = null;
     }
+    if (stopCloudSync) stopCloudSync();
   };
 
-  function openModal({ title, value = "", ok = "OK", danger = false, showInput = true, multiline = false }) {
+  function openModal({ title, value = "", ok = "OK", danger = false, showInput = true, multiline = false, anchor = null }) {
     return new Promise((resolve) => {
       const wrap = document.createElement("div");
-      wrap.className = "fv-modal";
+      wrap.className = anchor ? "fv-modal fv-modal-anchor" : "fv-modal";
       const field = !showInput
         ? ""
         : multiline
@@ -588,15 +628,44 @@ export async function mountPanel() {
           </div>
         </div>`;
       panel.appendChild(wrap);
+      const card = wrap.querySelector(".fv-modal-card");
+      if (anchor && card) {
+        const place = () => {
+          const ar = anchor.getBoundingClientRect();
+          const pr = panel.getBoundingClientRect();
+          const cw = card.offsetWidth || Math.min(280, pr.width - 16);
+          const ch = card.offsetHeight || 120;
+          let top = ar.bottom - pr.top + 4;
+          let left = ar.left - pr.left;
+          if (top + ch > pr.height - 8) top = Math.max(8, ar.top - pr.top - ch - 4);
+          left = Math.min(Math.max(8, left), Math.max(8, pr.width - cw - 8));
+          card.style.top = `${top}px`;
+          card.style.left = `${left}px`;
+        };
+        place();
+        requestAnimationFrame(place);
+      }
       const input = wrap.querySelector("#fv-modal-in");
+      const confirm = () => wrap.querySelector('[data-k="yes"]')?.click();
+      const cancel = () => wrap.querySelector('[data-k="no"]')?.click();
+      wrap.addEventListener(
+        "keydown",
+        (ev) => {
+          if (ev.key === "Escape") {
+            ev.preventDefault();
+            cancel();
+          }
+          if (ev.key === "Enter" && !ev.shiftKey) {
+            ev.preventDefault();
+            confirm();
+          }
+        },
+        true
+      );
       if (input) {
         isolateElement(input);
         input.focus();
         if (input.select) input.select();
-        input.addEventListener("keydown", (ev) => {
-          if (ev.key === "Escape") wrap.querySelector('[data-k="no"]').click();
-          if (ev.key === "Enter" && !multiline) wrap.querySelector('[data-k="yes"]').click();
-        });
       }
       wrap.addEventListener("click", (ev) => {
         if (ev.target === wrap) {
@@ -633,17 +702,40 @@ export async function mountPanel() {
         </div>`;
       panel.appendChild(wrap);
       wrap.addEventListener("click", (ev) => {
-        if (ev.target === wrap) {
-          wrap.remove();
-          resolve(null);
-          return;
-        }
         const k = ev.target.getAttribute?.("data-k");
         if (k === "no") {
           wrap.remove();
           resolve(null);
         }
         if (k === "current" || k === "new") {
+          wrap.remove();
+          resolve(k);
+        }
+      });
+    });
+  }
+
+  function openCloudSyncChoice() {
+    return new Promise((resolve) => {
+      const wrap = document.createElement("div");
+      wrap.className = "fv-modal";
+      wrap.innerHTML = `
+        <div class="fv-modal-card fv-cloud-sync">
+          <p>Cloud and this browser have different lists.</p>
+          <p class="fv-cloud-sync-note">Use cloud — replace this browser with the copy in Supabase.</p>
+          <p class="fv-cloud-sync-note">Keep this browser — upload this PC and replace the cloud copy.</p>
+          <p class="fv-cloud-sync-note">Keep both — merge. Same list name unions stocks. Extra cloud lists are added.</p>
+          <p class="fv-cloud-sync-note">Caps: 50 lists, 150 stocks. Leftovers are skipped.</p>
+          <div class="fv-modal-actions stack">
+            <button type="button" class="fv-btn fv-pill fv-pill-current" data-k="cloud">Use cloud</button>
+            <button type="button" class="fv-btn fv-pill fv-pill-scan" data-k="local">Keep this browser</button>
+            <button type="button" class="fv-btn fv-pill fv-pill-add" data-k="both">Keep both</button>
+          </div>
+        </div>`;
+      panel.appendChild(wrap);
+      wrap.addEventListener("click", (ev) => {
+        const k = ev.target.getAttribute?.("data-k");
+        if (k === "cloud" || k === "local" || k === "both") {
           wrap.remove();
           resolve(k);
         }
@@ -831,6 +923,8 @@ export async function mountPanel() {
       host.style.setProperty("min-width", `${minW}px`, "important");
       host.style.setProperty("height", "100vh", "important");
       applyPageLayout(panelW);
+      if (kind === "tv") shell.setAttribute("data-narrow", panelW < 300 ? "1" : "0");
+      else shell.removeAttribute("data-narrow");
     }
     return panelW;
   }
@@ -871,22 +965,12 @@ export async function mountPanel() {
     applyMinimized(false);
   }
 
-  let ignoreHeadDbl = false;
-
-  head.addEventListener("click", () => {
-    if (minimized) {
-      ignoreHeadDbl = true;
-      expandDock();
-      setTimeout(() => {
-        ignoreHeadDbl = false;
-      }, 400);
-    }
-  });
-
-  head.addEventListener("dblclick", async (e) => {
+  head.addEventListener("click", async (e) => {
     if (e.target.closest("#fv-dock-min")) return;
-    if (ignoreHeadDbl || minimized) return;
-    e.preventDefault();
+    if (minimized) {
+      await expandDock();
+      return;
+    }
     await set(minKey, true);
     applyMinimized(true);
   });
@@ -945,7 +1029,7 @@ export async function mountPanel() {
       body.innerHTML = `
         <div class="fv-cloud">
           <p class="fv-phase${ACTIVE_PHASE === 6 ? " fv-phase-warn" : ""}">${phaseBanner(ACTIVE_PHASE)}</p>
-          <h3 class="fv-cloud-head${st.on ? " on" : " off"}">${st.on ? `${CLOUD_ICON} ${escapeAttr(st.heading)}` : escapeAttr(st.heading)}</h3>
+          <h3 class="fv-cloud-head ${st.tone === "on" || st.tone === "busy" ? "on" : st.tone === "err" ? "err" : "off"}">${CLOUD_ICON} ${escapeAttr(st.heading)}</h3>
           ${
             cloudNotice
               ? `<p class="fv-banner ${cloudNoticeBusy ? "busy" : cloudNoticeOk ? "ok" : "err"}">${escapeAttr(cloudNotice)}</p>`
@@ -967,11 +1051,12 @@ export async function mountPanel() {
             <button type="button" class="fv-btn fv-pill fv-pill-add" id="fv-cloud-connect" title="Sign in to your Supabase project">Connect</button>
             <button type="button" class="fv-btn fv-pill fv-pill-scan" id="fv-cloud-disconnect" ${st.connected ? "" : "disabled"} title="Sign out. URL, key, and email stay on this computer">Disconnect</button>
           </div>
-          <button type="button" class="fv-btn fv-pill fv-cloud-backup" id="fv-cloud-backup" hidden disabled aria-hidden="true" tabindex="-1" title="Cloud Backup and Cloud Restore ship in v2.0.0. Connect already syncs your lists">Cloud Backup</button>
-          <div class="fv-row fv-actions fv-cloud-help">
+          <button type="button" class="fv-btn fv-pill fv-cloud-backup" id="fv-cloud-backup" hidden disabled aria-hidden="true" tabindex="-1" title="Not available. Connect already syncs your lists">Cloud Backup</button>
+          <div class="fv-cloud-help">
             <button type="button" class="fv-btn fv-pill" id="fv-open-supabase" title="Open this project in the Supabase dashboard">Open Supabase</button>
             <button type="button" class="fv-btn fv-pill" id="fv-help-cloud" title="How to create the project, table, and login user">Help</button>
             <button type="button" class="fv-btn fv-pill" id="fv-copy-sql" title="Copy the table and RLS SQL for the SQL Editor">Copy Setup SQL</button>
+            <button type="button" class="fv-btn fv-pill" id="fv-dl-log" title="Save a local log of cloud events as a text file. No lists or stocks">${DL_ICON} Log</button>
           </div>
           ${
             cloudSqlNote
@@ -1221,6 +1306,37 @@ export async function mountPanel() {
       await paint();
       return;
     }
+    if (e.target.closest("#fv-dl-log")) {
+      hidePopovers();
+      const st = await diagLogState();
+      if (!st.configured && !st.hasEvents) {
+        cloudSqlNote = "No log. Cloud is not configured.";
+        cloudSqlOk = false;
+        await paint();
+        return;
+      }
+      if (!st.hasEvents) {
+        cloudSqlNote = "No log yet.";
+        cloudSqlOk = false;
+        await paint();
+        return;
+      }
+      try {
+        downloadText(diagLogFileName(), await copyDiagReport());
+        cloudSqlNote = "If issue, mail log to nijeethfish@gmail.com";
+        cloudSqlOk = true;
+      } catch {
+        cloudSqlNote = "Could not save log";
+        cloudSqlOk = false;
+      }
+      await paint();
+      return;
+    }
+    if (e.target.closest("#fv-cloud-sync-now")) {
+      hidePopovers();
+      void refreshFromCloud();
+      return;
+    }
     if (e.target.closest("#fv-cloud-connect")) {
       hidePopovers();
       const url = body.querySelector("#fv-cloud-url")?.value || "";
@@ -1236,9 +1352,19 @@ export async function mountPanel() {
         await paint();
         return;
       }
-      const pulled = await pullCloudBook(book);
-      if (pulled.book) book = pulled.book;
-      setCloudNotice("", true);
+      setCloudNotice("Cloud Link Established", true);
+      await paint();
+      const synced = await resolveCloudOnConnect(book, () => openCloudSyncChoice());
+      if (!synced.ok) {
+        setCloudNotice(synced.error || "Could not sync lists", false);
+        await paint();
+        return;
+      }
+      if (synced.book) book = synced.book;
+      const skipBits = [];
+      if (synced.skippedStocks) skipBits.push(`${synced.skippedStocks} stocks skipped (150 cap)`);
+      if (synced.skippedLists) skipBits.push(`${synced.skippedLists} lists skipped (50 cap)`);
+      setCloudNotice(skipBits.length ? skipBits.join(". ") : "", true);
       await paint();
       return;
     }
@@ -1253,7 +1379,7 @@ export async function mountPanel() {
       hidePopovers();
       const go = await openModal({
         title: "Remove the URL, key, and email stored in this browser?",
-        ok: "Delete Cloud Details",
+        ok: "Delete",
         danger: true,
         showInput: false,
       });
@@ -1317,7 +1443,12 @@ export async function mountPanel() {
       });
       if (!go) return;
       exitSelect();
-      await applyBook(await restoreBackupBook(parsed.book));
+      const restored = await restoreBackupBook(parsed.book);
+      if (restored.ok && (await cloudStatus()).on) {
+        restored.message = "Restored. Linked cloud will be replaced in about 2 seconds.";
+      }
+      noteDiag({ kind: "restore", result: restored.ok ? "ok" : "fail", err: restored.error, hasSession: !!(await cloudStatus()).connected });
+      await applyBook(restored);
       return;
     }
 
@@ -1406,6 +1537,7 @@ export async function mountPanel() {
         value: "",
         ok: "Add",
         multiline: true,
+        anchor: e.target.closest("#fv-add, [data-act='add-stocks']") || body.querySelector("#fv-add"),
       });
       if (raw == null) return;
       const split = splitPasteTokens(raw);
@@ -1446,6 +1578,7 @@ export async function mountPanel() {
       return;
     }
     if (e.target.closest("#fv-xfer")) {
+      hideTip();
       const menu = body.querySelector("#fv-xfer-menu");
       const open = menu && menu.hidden;
       hidePopovers();
@@ -1643,7 +1776,8 @@ export async function mountPanel() {
 
     if (e.target.closest("#fv-list-new")) {
       hidePopovers();
-      const name = await openModal({ title: "New list", value: "List", ok: "Create" });
+      const plus = e.target.closest("#fv-list-new");
+      const name = await openModal({ title: "New list", value: "List", ok: "Create", anchor: plus });
       if (name) await applyBook(await createList(book, name));
       return;
     }
