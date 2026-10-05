@@ -7,7 +7,7 @@ Keep this file, `PHASES.md`, `WHATSNEW.md`, `CHANGELOG.md`, and `README.md` in s
 **Watchlist caution banner:** `BANNER` constant in `lists/render.js` and `shell/mount.js` (Yahoo delayed-data warning)  
 **Cloud:** live (`cloud/`, `https://*.supabase.co/*`). Cloud Backup control is hidden.  
 **Chrome:** `minimum_chrome_version` **111**  
-**Privacy:** https://sites.google.com/view/fishviewwatchlist-privacy  
+**Privacy:** https://sites.google.com/view/fishview-watchlist-privacy  
 **Support:** nijeethfish@gmail.com  
 **Licence:** MIT (`LICENSE`)  
 **New contributors:** start at **§14 Getting started**; sections 14–23 are the contributor guide.
@@ -16,13 +16,14 @@ Keep this file, `PHASES.md`, `WHATSNEW.md`, `CHANGELOG.md`, and `README.md` in s
 
 ## 1. What the app does
 
-Right-side watchlist dock on TradingView, Screener.in, and Chartink. The page is **pushed** (`width` + `margin-right`); the dock does not cover the chart.
+Right-side watchlist dock on TradingView, Screener.in, Chartink and Fish RS Board. The page is **pushed** (`width` + `margin-right`); the dock does not cover the chart. On TradingView's `/screener/` page the dock stays hidden.
 
-- **Watchlist:** up to **50 lists × 200 stocks**, labels, sort, filter, bulk select, local JSON backup/restore, TV chart switch.
+- **Watchlist:** up to **50 lists × 200 stocks**, labels, sort, filter, bulk select, local JSON backup/restore, TV chart switch, Up/Down arrow navigation, and an **All Unique Stock** computed union view.
+- **New stocks stay highlighted** (`isNew` on the stock, ≤50 per add batch) until a row interaction or **Clear New**. Copy/Move never marks.
 - **Cloud:** optional **user-owned** Supabase. Password is typed only and never stored. Cloud Backup control is hidden; Connect already syncs.
-- **Quotes:** Yahoo CMP / % / Mcap for the **open list only**, every **60s**. Not realtime. Not stored.
+- **Quotes:** Yahoo CMP / % / Mcap for the **open list only**, every **60s**. Not realtime. Responses are shared across tabs via a 45s symbol-level session cache in the worker; not persisted.
 - **Ingest:** paste Add (max 5, comma-separated), CSV import/export (NSE/BSE prefixes; 201+ reject all).
-- **Sites:** Scan, per-row **+**, Current from Screener/Chartink company or stock URLs.
+- **Sites:** Scan, per-row **+**, Current from Screener/Chartink company or stock URLs (Fish RS Board has Scan and `+`, no Current).
 
 Puzzle-icon **popup** turns the dock on/off per site (no tab reload required).
 
@@ -68,7 +69,7 @@ Page (TV / Screener / Chartink)
 ```
 
 1. `boot.js` skips iframes. Mount if the popup allows this host.
-2. `mount.js` creates `#fv-root`, open shadow, dock CSS (compact on Screener/Chartink).
+2. `mount.js` creates `#fv-root`, **closed** shadow, dock CSS (compact on Screener/Chartink/Fish RS Board). `site-gate.panelAllowedHere()` also blocks the TradingView `/screener/` path.
 3. Page push: `html`/`body` + `--fv-dock-w`. TV uses width and margin-right.
 4. Dock typing is isolated (`shared/isolate-keys.js`).
 5. `chrome.storage.onChanged` refreshes width, minimize, `listBook`, and popup site gates.
@@ -83,13 +84,14 @@ Page (TV / Screener / Chartink)
 | Stocks per list | Max **200** |
 | Batch select | Max **30** |
 | Row identity | `exchange` + `ticker` |
-| List names | Letters, numbers, space, hyphen; unique |
+| List names | Letters, numbers, space, `-`, `+`; ≤ **25** chars; unique; `All Unique Stock` reserved |
 | Paste Add | Max **5** tokens; commas; active list |
 | CSV / Scan | **> 200** → reject all |
 | Bare paste | NSE then BSE |
 | CSV prefixes | `NSE:` / `BSE:` only (US via Add/Current) |
 | TV Current | `pro_name` (`NASDAQ:` / `NYSE:`). Chart feed may show Cboe One / `BATS:`; those are not stored. |
-| Quotes | Open list only; not stored |
+| Quotes | Open list only; 45s worker cache shared across tabs |
+| New-stock mark | `isNew` on adds ≤ **50**; clears on row interaction / Clear New; copy/move never mark |
 | Cloud password | Never in `chrome.storage` |
 | Local backup | Full `listBook` JSON; restore overwrites |
 
@@ -103,7 +105,7 @@ Do not copy names or pipelines from other watchlist products. Chart-switch and N
 
 ```text
 {
-  lists: [{ id, name, stocks: [{ exchange, ticker, label }] }],
+  lists: [{ id, name, stocks: [{ exchange, ticker, label, isNew? }] }],
   activeId,
   labelOn: { green, blue, orange, red, none },
   sortKey: name | price | pct | mcap | label,
@@ -112,6 +114,7 @@ Do not copy names or pipelines from other watchlist products. Chart-switch and N
 ```
 
 - First install: **Default** (SBIN, HDFCBANK, RELIANCE) + **Demo**.
+- `isNew`: `true` only when present (stripped by `clearNewEverywhere` / `clearNewFlags`); preserved through `normalizeBook`, cloud merge, backup and `bookFingerprint` (so a clear pushes the diff).
 - Label: `green` | `blue` | `orange` | `red` | `null`.
 - Filter: OR. Last individual tick cannot turn off. Close popup with none on → restore all on.
 - Label sort: green → blue → orange → red; unlabeled **last** in both directions. Desc colours reverse; same colour Z–A.
@@ -131,7 +134,10 @@ Do not copy names or pipelines from other watchlist products. Chart-switch and N
 - List picker (A–Z, 8-row drop, theme fill, `#089981` border).
 - `+` new list, `⋮` rename/delete, quotes refresh (`#fv-quotes-go`).
 - Current, Add, Scan, File (CSV this list). Local **Backup Local** / **Restore Backup** (all lists + labels).
-- Banner: `WARNING: Delayed Price Data` (BANNER constant).
+- Banner: `WARNING: Delayed Price Data` (BANNER constant) with a right-aligned **Clear New** pill (`#fv-clear-new`, enabled when the view has `isNew` rows; in All Unique Stock it clears all lists).
+- **All Unique Stock** (`__ALL__`) is the default first picker entry: computed union, not stored/synced; Add/Current/`+` disabled, Scan → new-list popup with "current" disabled, delete warns "removed from ALL watchlists", long-press shows a bulk-not-allowed notice.
+- Up/Down arrows walk `selectedKey` and switch the chart (page-wide, capture phase; skips typing contexts, bulk mode, modals).
+- Row interactions (click, right-click, long-press, bulk-select tick) clear that stock's `isNew` everywhere.
 - Cloud line: cloud icon + short words (**Not configured** / **Not connected** / **Database not ready** / **Link Established** / **Connected** / **Connecting…** / **Network issue**) plus **[cloud] Sync** (manual pull). Cloud tab heading keeps the full **Cloud …** phrases.
 - Known issue: **Chartink website issue** on the chart window only (their Dark theme). Dock offers **Use Chartink Day** on that screen.
 - Table: Label | Name | Price | %Change | Mktcap. **Filter Applied** colour dots stay 10px (column-header dots still shrink). Long-press 500ms → batch (overlay checks on label column; header = select all). Confirm all bulk actions. Label 4 colours + unlabel; dest unlabeled. 200 add-what-fits; 30 batch cap.
@@ -162,6 +168,8 @@ Screener/Chartink: no TV API. Scan `table` links; `+` on rows; Current from URL.
 
 `quotesForOpenListOnly()`. 60s Yahoo **HTTP** (`query1` / `query2.finance.yahoo.com`; not yfinance) via content-script interval (not `chrome.alarms`). Session = Yahoo `currentTradingPeriod`. Equity CMP / % / Mcap; index Mktcap `-`; F&O / unknown `-`. Refresh retries open list. No poll when dock closed. US store `NASDAQ:AAPL`, Yahoo `AAPL`. Yahoo’s own exchange delay (often 0–15+ min) is separate from the 60s poll.
 
+**Centralized cache (worker):** `FV_YAHOO_JSON` messages all funnel through `fetchYahooJson` in `background/index.js`. `/v7/finance/quote` requests are split per symbol into `fvYahooSymCache` (`chrome.storage.session`, 45s TTL, ≤400 symbols) — fresh rows served locally, only missing/stale unique symbols fetched (≤25 per request), response rebuilt in order. Other URLs use `fvYahooQCache` (whole-URL, 45s). In-flight dedupe per URL. Crumb requests bypass. `msg.force` (manual Refresh) skips the cache read but still writes for other tabs. `chrome.storage.session` is shared by all tabs, survives worker suspension, clears on browser close, never syncs.
+
 `getBoardBook()`: bundled EQ seed, then Fyers live cached 24h. `preferNseThenBse()` for bare names. `chrome.alarms` (`fvDumpFirst`) retries the first Fyers dump if the live list is not ready.
 
 ---
@@ -186,6 +194,7 @@ Probe the table only marks **Database not ready** on PostgREST missing-table err
 | `fvCloudUrl`, `fvCloudPublishableKey`, `fvCloudEmail`, `fvCloudSession`, `fvCloudBookAt` | Cloud, no password |
 | `fvDiagLog` | Local cloud event log (**Log** download). No lists or tokens |
 | `fvBoardBookV6` | EQ dump cache |
+| `fvYahooSymCache` / `fvYahooQCache` (session) | 45s shared quote cache (§8) — `chrome.storage.session`, not `local` |
 
 ---
 
@@ -272,7 +281,8 @@ dock click → lists/book.js saveBook → normalizeBook → chrome.storage.local
 
 ```
 shell (open list) → quotes quotesForOpenListOnly → background FV_YAHOO_JSON (Yahoo crumb + JSON)
-  → CMP / % / Mcap → paint only (never stored). Every 60s; stops when dock closed.
+  → symbol-level session cache (fvYahooSymCache, 45s, all tabs) / whole-URL cache
+  → CMP / % / Mcap → paint only (45s session cache only, never persisted). Every 60s; stops when dock closed.
 ```
 
 **Add by name**
@@ -314,7 +324,7 @@ Network goes through the worker. MV3 content scripts fetch with the page origin 
 | `FV_CLOUD_HTTP` | Runtime message | `cloud/` → background | Supabase HTTP, `*.supabase.co` only |
 | `OPEN_CLOUD_HELP` | Runtime message | `shell` → background | Open `help/index.html` |
 | `OPEN_SUPABASE` | Runtime message | `shell` → background | Open dashboard for the typed project URL |
-| `FV_YAHOO_JSON` | Runtime message | `quotes/` → background | Quote JSON (`query1` / `query2`) |
+| `FV_YAHOO_JSON` | Runtime message | `quotes/` → background | Quote JSON (`query1` / `query2`); `force` bypasses cache |
 | `FV_BOARD_BOOK` | Runtime message | `listings/` → background | EQ symbol list |
 | `FV_OPEN_TV` | Runtime message | `shell` → background | Focus or open a TV chart tab |
 | `FV_CHANGE_SYMBOL` | Runtime message | background → content | Switch symbol in an existing TV tab |
@@ -340,7 +350,7 @@ All in `chrome.storage.local`. Add new keys to `persist/` and to this table.
 | `fvDiagLog` | `{ events: [...] }` last 500 cloud events | `cloud` | Oldest dropped; uninstall |
 | `fvBoardBookV6` | `{ ts, map, live }` Fyers EQ book | `listings` / worker | Replaced after 24h live fetch |
 
-**Never stored:** cloud password, quotes, stock lists inside `fvDiagLog`.
+**Never stored:** cloud password, stock lists inside `fvDiagLog`. Quotes live only in the ~45 s `chrome.storage.session` caches (§8) — never persisted to `local`.
 
 **Cloud table** (same SQL as **Copy Setup SQL** and the help page):
 
@@ -373,7 +383,9 @@ Changing `listBook` shape: update `normalizeBook`, keep old books loading (local
 
 ## 20. Testing
 
-No automated suite. Manual, per release:
+Automated: `node --test test/` — pure-module tests for `lists/book.js` (caps, name rules, `isNew` lifecycle, All Unique), `ingest/csv.js`, `quotes/hours.js`, `lists/backup.js`.
+
+Manual, per release:
 
 | Area | Check |
 |---|---|
@@ -384,7 +396,8 @@ No automated suite. Manual, per release:
 | Ingest | Add 5 max, commas only; CSV 201 reject all; bare `RELIANCE` → NSE |
 | Sites | Scan > 200 reject; Scan current vs new list; row +; Current from URL |
 | Charts | Row click no reload; US Current → `NASDAQ:` / `NYSE:` |
-| Quotes | Open list only; no poll when closed; Refresh retries (PHASES §6) |
+| Quotes | Open list only; no poll when closed; Refresh retries (PHASES §6); Refresh bypasses shared cache; two tabs same list = one fetch |
+| isNew | Add marks teal; >50 batch unmarked; click/right-click/long-press/Clear New clears; copy/move never mark |
 | Backup | Round trip; restore overwrites |
 | Cloud | Two browsers, same Auth user (PHASES §7); banners Cloud tab only; no password in storage |
 | Help | Opens; follows `fvTheme`; Copy SQL |
