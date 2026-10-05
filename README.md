@@ -1,6 +1,6 @@
 # FishView Watchlist
 
-**A stock watchlist docked beside TradingView, Screener.in, Chartink and Fish RS Board. Your lists stay on your computer, and cloud sync is optional.**
+**A stock watchlist docked beside TradingView. Your lists stay on your computer, and cloud sync is optional.**
 
 `Chrome extension` · `Manifest V3` · **v2.0.0** · Chrome **111+**
 
