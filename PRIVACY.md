@@ -57,7 +57,7 @@ FishView saves the following in Chrome's local extension storage (`chrome.storag
 
 **Your cloud password is never stored.** You type it only to connect.
 
-**Prices are kept only in a short-lived session cache** (about 90 seconds) shared between your tabs, and are cleared when the browser closes. Price, % change and market cap are not saved long-term.
+**Prices are kept only in a short-lived session cache** (about 45 seconds) shared between your tabs, and are cleared when the browser closes. Price, % change and market cap are not saved long-term.
 
 ### Files you choose to save
 
@@ -71,7 +71,7 @@ FishView connects only to the services below. It sends each one only what that f
 
 - **What is sent:** the ticker symbols of the stocks in the watchlist you currently have open (converted to the format Yahoo uses). As with any web request, Yahoo also receives standard technical information such as your IP address and browser information, and any Yahoo cookies already in your browser. FishView also contacts Yahoo to obtain the cookie and "crumb" value that Yahoo requires before it will answer price requests.
 - **When:** about every 60 seconds while the dock is open, and when you press the refresh button. Only the open list is sent. Nothing is requested while the dock is closed.
-- **Why:** to show delayed price, % change and market cap. Responses are cached briefly (~90 s) in session storage shared across tabs, then discarded.
+- **Why:** to show delayed price, % change and market cap. Responses are cached briefly (~45 s) in session storage shared across tabs, then discarded.
 - **Addresses used:** query1.finance.yahoo.com, query2.finance.yahoo.com, fc.yahoo.com and finance.yahoo.com.
 
 ### Fyers (public stock symbol list)
@@ -167,7 +167,7 @@ FishView Watchlist is a general-audience tool for following stocks. It is not di
 
 ## Your choices and rights
 
-Because all of your information stays on your device or in your own Supabase project, you are in full control of it: you can view, change, export or delete it at any time using the steps above. We hold no information about you, so there is nothing for us to access, correct or delete on your behalf. If you have a question or request, contact us at [contact email].
+Because all of your information stays on your device or in your own Supabase project, you are in full control of it: you can view, change, export or delete it at any time using the steps above. We hold no information about you, so there is nothing for us to access, correct or delete on your behalf. If you have a question or request, contact us at nijeethfish@gmail.com.
 
 ## Third-party services and their privacy policies
 
