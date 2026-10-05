@@ -22,6 +22,17 @@ _None._
 
 _None._
 
+## Shipped
+
+### v2.0.0 (2026-10-06)
+
+- **B-01…B-20** — code-review findings (caps, names, listener/cloud/quote storm fixes, esc(), ticker charset, placeholders, scaffold removal, dropdown-on-repaint).
+- **A-01…A-09** — audit fixes (render crash, closed shadow, Fish RS toggle, resize leak, cloud path narrowing, observer debounce, import-name cap, WAR cleanup, sender checks).
+- **T-01…T-05** — tester fixes (import refusal, AUS default after connect, picker hover titles, cross-tab quote cache, AUS bulk long-press notice).
+- **Post-release** — AUS Copy flagging isNew, Clear New sizing, Yahoo session/symbol cache, dead-context guards.
+
+Details for each entry are in `CHANGELOG.md` under 2.0.0.
+
 ## Accepted / documented (won't fix in v2.0.0)
 
 - **H-03** Page-world CustomEvents (`fv_page_plus`, `fv_change_symbol`, `fv_symbol_response`) are spoofable by hostile page JS — a nonce is not a real secret over `document` events. Real fix would isolate emitters to extension contexts only.
