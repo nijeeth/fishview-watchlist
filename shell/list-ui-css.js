@@ -837,10 +837,39 @@ export const LIST_UI_CSS = `
 .fv-phase-warn {
   color: #f77a4a;
   font-weight: 700;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+#fv-shell .fv-clear-new {
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.3;
+  height: auto;
+  min-height: 0;
+  padding: 1px 6px;
+  margin-left: auto;
+  border-radius: 999px;
+  border: 1px solid #089981;
+  color: #089981;
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+#fv-shell .fv-clear-new:hover:not(:disabled) {
+  background: rgba(8, 153, 129, 0.15);
+}
+#fv-shell .fv-clear-new:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.fv-table tbody tr.fv-new {
+  background: rgba(8, 153, 129, 0.16);
+}
+.fv-table tbody tr.fv-new:hover {
+  background: rgba(8, 153, 129, 0.28);
 }
 .fv-chartink-site {
   color: var(--fv-muted);

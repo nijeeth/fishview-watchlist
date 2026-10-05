@@ -20,9 +20,9 @@ function noteOk() {
   }
 }
 
-async function fetchJson(url) {
+async function fetchJson(url, force) {
   if (yahooPaused()) return null;
-  const res = await yahooGet(url);
+  const res = await yahooGet(url, force);
   if (res.status === 429) {
     note429();
     return null;
@@ -76,17 +76,18 @@ export async function fetchChartMeta(yahooSym, exchange) {
   return meta || null;
 }
 
-export async function fetchYahooQuoteBatch(yahooSymbols) {
+export async function fetchYahooQuoteBatch(yahooSymbols, force = false) {
   const list = [...new Set((yahooSymbols || []).filter(Boolean))];
   const out = new Map();
   const chunk = 20;
   for (let i = 0; i < list.length; i += chunk) {
     const part = list.slice(i, i + chunk);
     const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${part.map(encodeURIComponent).join(",")}`;
-    let json = await fetchJson(url);
+    let json = await fetchJson(url, force);
     if (!json) {
       json = await fetchJson(
-        `https://query2.finance.yahoo.com/v7/finance/quote?symbols=${part.map(encodeURIComponent).join(",")}`
+        `https://query2.finance.yahoo.com/v7/finance/quote?symbols=${part.map(encodeURIComponent).join(",")}`,
+        force
       );
     }
     const rows = json?.quoteResponse?.result;
@@ -106,12 +107,13 @@ export async function fetchYahooQuoteBatch(yahooSymbols) {
   return out;
 }
 
-export async function fetchYahooQuote(yahooSym, exchange) {
+export async function fetchYahooQuote(yahooSym, exchange, force = false) {
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSym)}?interval=1d&range=5d`;
-  let json = await fetchJson(url);
+  let json = await fetchJson(url, force);
   if (!json) {
     json = await fetchJson(
-      `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSym)}?interval=1d&range=5d`
+      `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSym)}?interval=1d&range=5d`,
+      force
     );
   }
   const res = json?.chart?.result?.[0];

@@ -13,6 +13,7 @@ function listsOnly(book) {
         exchange: s.exchange,
         ticker: s.ticker,
         label: s.label || null,
+        ...(s.isNew === true ? { isNew: true } : {}),
       })),
     })),
     activeId: book.activeId,

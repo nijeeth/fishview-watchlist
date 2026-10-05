@@ -44,6 +44,8 @@ export {
   setSort,
   cleanListName,
   nameTaken,
+  clearNewEverywhere,
+  clearNewFlags,
 } from "./book.js";
 
 export { backupJson, backupFileName, parseBackupText, restoreBackupBook } from "./backup.js";

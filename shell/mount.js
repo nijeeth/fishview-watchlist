@@ -24,6 +24,8 @@ import {
   normalizeBook,
   cleanListName,
   nameTaken,
+  clearNewEverywhere,
+  clearNewFlags,
   canonicalExchange,
   labelTitle,
   setLabelsOn,
@@ -877,6 +879,16 @@ export async function mountPanel() {
     }, 30000);
   }
 
+  /** Any row interaction clears the "new" mark (everywhere the stock exists). */
+  async function markSeenRow(ex, ticker) {
+    const res = await clearNewEverywhere(book, ex, ticker);
+    if (res.cleared && res.book) {
+      book = res.book;
+      await paint();
+      scheduleCloudPush(book);
+    }
+  }
+
   async function applyBook(res, opts = {}) {
     noticeBusy = false;
     if (res.counts) {
@@ -1187,6 +1199,7 @@ export async function mountPanel() {
       viewList: curList(),
       viewAll,
       allStocks: allUniqueStocks(book).length,
+      newCount: curList().stocks.reduce((n, s) => n + (s.isNew ? 1 : 0), 0),
     });
     const wrap = body.querySelector(".fv-table-wrap");
     if (wrap) wrap.scrollTop = tableScrollTop;
@@ -1696,6 +1709,17 @@ export async function mountPanel() {
       return;
     }
 
+    if (e.target.closest("#fv-clear-new")) {
+      hidePopovers();
+      const res = await clearNewFlags(book, viewAll ? ALL_STOCKS_ID : book.activeId);
+      if (res.cleared && res.book) {
+        book = res.book;
+        scheduleCloudPush(book);
+      }
+      await paint();
+      return;
+    }
+
     if (e.target.closest("#fv-quotes-go")) {
       hidePopovers();
       if (quotesBusy) return;
@@ -1991,11 +2015,13 @@ export async function mountPanel() {
       const key = `${stockRow.dataset.ex}:${stockRow.dataset.ticker}`;
       if (selectMode) {
         if (Date.now() < ignoreRowClickUntil) return;
+        void markSeenRow(stockRow.dataset.ex, stockRow.dataset.ticker);
         toggleSelectKey(key);
         await paint();
         return;
       }
       selectedKey = key;
+      void markSeenRow(stockRow.dataset.ex, stockRow.dataset.ticker);
       body.querySelectorAll("tbody tr[data-ticker]").forEach((tr) => {
         tr.classList.toggle("fv-row-on", `${tr.dataset.ex}:${tr.dataset.ticker}` === selectedKey);
       });
@@ -2017,11 +2043,12 @@ export async function mountPanel() {
     }
   });
 
-  shell.addEventListener("contextmenu", (e) => {
+  shell.addEventListener("contextmenu", async (e) => {
     const tr = e.target.closest("tbody tr[data-ticker]");
     if (!tr) return;
     e.preventDefault();
     if (selectMode) return;
+    await markSeenRow(tr.dataset.ex, tr.dataset.ticker);
     showRowMenu(e, tr.dataset.ex, tr.dataset.ticker);
   });
 
@@ -2051,6 +2078,8 @@ export async function mountPanel() {
         paint();
         return;
       }
+      const ci = key.indexOf(":");
+      void markSeenRow(key.slice(0, ci), key.slice(ci + 1));
       enterSelect(key);
     }, 500);
   });

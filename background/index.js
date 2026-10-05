@@ -26,11 +26,95 @@ const YAHOO_PATHS = [
   "/v1/test/getcrumb",
 ];
 
-// Cross-tab quote reuse: identical URLs share a short-lived in-memory
-// response and de-duplicate in-flight fetches (SW memory only, not storage).
+// Cross-tab quote reuse: chrome.storage.session (survives SW suspension,
+// session-only, never synced) plus an in-memory in-flight dedupe map.
+// Non-batch URLs are cached whole. /v7/finance/quote requests are split into
+// symbols: fresh rows come from a shared per-symbol cache and only the
+// missing/stale unique symbols are fetched — so different tabs with
+// overlapping lists share one network call.
 const YQ_TTL_MS = 45 * 1000;
-const yqCache = new Map();
+const YQ_CACHE_KEY = "fvYahooQCache";
+const YQ_SYM_KEY = "fvYahooSymCache";
 const yqInflight = new Map();
+
+async function yqGet(url) {
+  try {
+    const all = (await chrome.storage.session.get(YQ_CACHE_KEY))?.[YQ_CACHE_KEY] || {};
+    const hit = all[url];
+    if (hit && Date.now() - hit.ts < YQ_TTL_MS) return hit.payload;
+  } catch (_) {}
+  return null;
+}
+
+async function yqPut(url, payload) {
+  try {
+    const all = (await chrome.storage.session.get(YQ_CACHE_KEY))?.[YQ_CACHE_KEY] || {};
+    const keys = Object.keys(all);
+    if (keys.length > 40) delete all[keys[0]];
+    all[url] = { ts: Date.now(), payload };
+    await chrome.storage.session.set({ [YQ_CACHE_KEY]: all });
+  } catch (_) {}
+}
+
+async function symCacheGet() {
+  try {
+    return (await chrome.storage.session.get(YQ_SYM_KEY))?.[YQ_SYM_KEY] || {};
+  } catch (_) {
+    return {};
+  }
+}
+
+async function symCachePut(cache) {
+  try {
+    const keys = Object.keys(cache);
+    if (keys.length > 400) {
+      keys.sort((a, b) => (cache[a].ts || 0) - (cache[b].ts || 0));
+      for (const k of keys.slice(0, keys.length - 400)) delete cache[k];
+    }
+    await chrome.storage.session.set({ [YQ_SYM_KEY]: cache });
+  } catch (_) {}
+}
+
+// /v7/finance/quote?symbols=A,B,C — dedupe at symbol level across tabs.
+async function fetchQuoteSymbols(href, force) {
+  const m = /[?&]symbols=([^&]+)/.exec(href);
+  const syms = [...new Set((m?.[1] || "").split(",").map((s) => decodeURIComponent(s)).filter(Boolean))];
+  if (!syms.length) return fetchYahooJsonNow(href);
+  const now = Date.now();
+  const cache = await symCacheGet();
+  const fresh = new Map();
+  const stale = [];
+  for (const s of syms) {
+    const e = cache[s.toUpperCase()];
+    if (!force && e && now - e.ts < YQ_TTL_MS) fresh.set(s.toUpperCase(), e.row);
+    else stale.push(s);
+  }
+  if (stale.length) {
+    const host = href.startsWith("https://query2") ? "query2.finance.yahoo.com" : "query1.finance.yahoo.com";
+    let merged = null;
+    for (let i = 0; i < stale.length; i += 25) {
+      const qurl = `https://${host}/v7/finance/quote?symbols=${stale.slice(i, i + 25).map(encodeURIComponent).join(",")}`;
+      const out = await fetchYahooJsonNow(qurl);
+      if (!out.ok) {
+        if (!merged) return out;
+        continue;
+      }
+      merged = merged || [];
+      const rows = out.json?.quoteResponse?.result || [];
+      for (const r of rows) {
+        const sym = String(r.symbol || "").toUpperCase();
+        if (!sym) continue;
+        cache[sym] = { ts: now, row: r };
+        fresh.set(sym, r);
+        merged.push(r);
+      }
+    }
+    void symCachePut(cache);
+    if (!merged) return { ok: false, status: 0 };
+  }
+  const result = syms.map((s) => fresh.get(s.toUpperCase())).filter(Boolean);
+  return { ok: true, status: 200, json: { quoteResponse: { result } } };
+}
 
 async function fetchYahooJsonNow(url) {
   const href = String(url || "");
@@ -61,18 +145,20 @@ async function fetchYahooJsonNow(url) {
   }
 }
 
-async function fetchYahooJson(url) {
+async function fetchYahooJson(url, force) {
   const href = String(url || "");
   if (href.includes("/v1/test/getcrumb")) return fetchYahooJsonNow(href);
-  const hit = yqCache.get(href);
-  if (hit && Date.now() - hit.ts < YQ_TTL_MS) return hit.payload;
   if (yqInflight.has(href)) return yqInflight.get(href);
-  const job = fetchYahooJsonNow(href)
-    .then((out) => {
-      if (out.ok) yqCache.set(href, { ts: Date.now(), payload: out });
-      return out;
-    })
-    .finally(() => yqInflight.delete(href));
+  const job = (async () => {
+    if (href.includes("/v7/finance/quote")) return fetchQuoteSymbols(href, force);
+    if (!force) {
+      const cached = await yqGet(href);
+      if (cached) return cached;
+    }
+    const out = await fetchYahooJsonNow(href);
+    if (out.ok) void yqPut(href, out);
+    return out;
+  })().finally(() => yqInflight.delete(href));
   yqInflight.set(href, job);
   return job;
 }
@@ -374,7 +460,7 @@ startModule("worker", () => {
       return true;
     }
     if (msg && msg.type === "FV_YAHOO_JSON") {
-      fetchYahooJson(msg.url).then((r) => sendResponse(r));
+      fetchYahooJson(msg.url, msg.force).then((r) => sendResponse(r));
       return true;
     }
     if (msg && msg.type === "FV_OPEN_TV") {

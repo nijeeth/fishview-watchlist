@@ -3,6 +3,7 @@ import { demoList } from "./demo.js";
 
 export const LIST_CAP = 50;
 export const STOCK_CAP = 200;
+export const NEW_MARK_MAX = 50;
 export const ALL_STOCKS_ID = "__ALL__";
 export const NAME_MAX = 25;
 export const BATCH_CAP = 30;
@@ -177,7 +178,7 @@ export function bookFingerprint(raw) {
   return JSON.stringify(
     listsByName(b.lists).map((l) => ({
       n: String(l.name || "").trim().toLowerCase(),
-      s: l.stocks.map((x) => `${x.exchange}:${x.ticker}:${x.label || ""}`).sort(),
+      s: l.stocks.map((x) => `${x.exchange}:${x.ticker}:${x.label || ""}:${x.isNew ? "n" : ""}`).sort(),
     }))
   );
 }
@@ -202,7 +203,7 @@ export function mergeKeepBoth(localRaw, remoteRaw) {
           skippedStocks += 1;
           continue;
         }
-        dest.stocks.push({ exchange: s.exchange, ticker: s.ticker, label: s.label });
+        dest.stocks.push({ exchange: s.exchange, ticker: s.ticker, label: s.label, isNew: s.isNew === true });
         have.add(k);
       }
     } else if (lists.length >= LIST_CAP) {
@@ -212,7 +213,7 @@ export function mergeKeepBoth(localRaw, remoteRaw) {
       const copy = {
         id: newId(),
         name: rl.name,
-        stocks: rl.stocks.slice(0, STOCK_CAP).map((s) => ({ exchange: s.exchange, ticker: s.ticker, label: s.label })),
+        stocks: rl.stocks.slice(0, STOCK_CAP).map((s) => ({ exchange: s.exchange, ticker: s.ticker, label: s.label, isNew: s.isNew === true })),
       };
       lists.push(copy);
       byName.set(key, copy);
@@ -240,6 +241,7 @@ export function normalizeBook(raw, opts = {}) {
             exchange: canonicalExchange(s?.exchange) || "NSE",
             ticker: cleanTicker(s?.ticker),
             label: LABELS.includes(s?.label) ? s.label : null,
+            ...(s?.isNew === true ? { isNew: true } : {}),
           })).filter((s) => s.ticker && KNOWN_EXCHANGES.has(s.exchange)),
         };
       })
@@ -292,8 +294,11 @@ export function allUniqueStocks(book) {
     for (const s of l.stocks || []) {
       const k = `${s.exchange}:${s.ticker}`;
       const prev = seen.get(k);
-      if (!prev) seen.set(k, { exchange: s.exchange, ticker: s.ticker, label: s.label || null });
-      else if (!prev.label && s.label) prev.label = s.label;
+      if (!prev) seen.set(k, { exchange: s.exchange, ticker: s.ticker, label: s.label || null, isNew: s.isNew === true });
+      else {
+        if (!prev.label && s.label) prev.label = s.label;
+        if (s.isNew) prev.isNew = true;
+      }
     }
   }
   return [...seen.values()];
@@ -354,6 +359,39 @@ export async function moveStockEverywhere(book, toId, exchange, ticker) {
   if (to.stocks.length >= STOCK_CAP) return { ok: false, error: `That list is full (${STOCK_CAP})`, book };
   to.stocks.push({ exchange, ticker, label: null });
   return { ok: true, book: await saveBook(next) };
+}
+
+/** Any row interaction marks the stock seen. Clears the flag everywhere it exists. */
+export async function clearNewEverywhere(book, exchange, ticker) {
+  const next = clone(book);
+  let cleared = 0;
+  for (const l of next.lists) {
+    for (const s of l.stocks) {
+      if (s.isNew && s.exchange === exchange && s.ticker === ticker) {
+        delete s.isNew;
+        cleared += 1;
+      }
+    }
+  }
+  if (!cleared) return { ok: true, cleared, book };
+  return { ok: true, cleared, book: await saveBook(next) };
+}
+
+/** Clears all "new" marks in one list, or everywhere when listId is __ALL__/missing. */
+export async function clearNewFlags(book, listId) {
+  const next = clone(book);
+  let cleared = 0;
+  for (const l of next.lists) {
+    if (listId && listId !== ALL_STOCKS_ID && l.id !== listId) continue;
+    for (const s of l.stocks) {
+      if (s.isNew) {
+        delete s.isNew;
+        cleared += 1;
+      }
+    }
+  }
+  if (!cleared) return { ok: true, cleared, book };
+  return { ok: true, cleared, book: await saveBook(next) };
 }
 
 function quoteNum(quotes, stock, field) {
@@ -443,7 +481,7 @@ export async function deleteList(book, id) {
   return { ok: true, book: await saveBook(next) };
 }
 
-export async function addStock(book, listId, raw) {
+export async function addStock(book, listId, raw, { markNew = true } = {}) {
   const { exchange, ticker } = parseSymbol(raw);
   if (!ticker) return { ok: false, error: "Symbol required", book };
   const next = clone(book);
@@ -453,7 +491,7 @@ export async function addStock(book, listId, raw) {
   if (list.stocks.some((s) => s.ticker === ticker && s.exchange === exchange)) {
     return { ok: false, error: "Already in this list", book };
   }
-  list.stocks.push({ exchange, ticker, label: null });
+  list.stocks.push({ exchange, ticker, label: null, ...(markNew ? { isNew: true } : {}) });
   return { ok: true, book: await saveBook(next) };
 }
 
@@ -489,10 +527,16 @@ export async function addStocks(book, listId, items) {
       exists += 1;
       continue;
     }
-    list.stocks.push({ exchange, ticker, label: null });
+    list.stocks.push({ exchange, ticker, label: null, isNew: true });
     log.push(`${tag} added`);
     addedItems.push({ exchange, ticker });
     added += 1;
+  }
+  if (added > NEW_MARK_MAX) {
+    for (const it of addedItems) {
+      const s = list.stocks.find((x) => x.exchange === it.exchange && x.ticker === it.ticker);
+      if (s) delete s.isNew;
+    }
   }
   const message = `${added} added, ${exists} exists, ${failed} failed`;
   if (!added) return { ok: true, book, log, added, exists, failed, message, addedItems };

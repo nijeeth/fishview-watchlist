@@ -38,7 +38,7 @@ function fmtMcap(n) {
   return `${Math.round(n)}`;
 }
 
-export function watchlistHtml(book, { cloudIcon, refreshIcon, cloudStatus, notice, noticeOk, noticeBusy, noticeCounts, selectedKey, currentReady, scanReady, quotesLoading, quotes, selecting, selectedKeys, selView, selConfirm, flashKeys, chartinkChartDark, viewList, viewAll, allStocks }) {
+export function watchlistHtml(book, { cloudIcon, refreshIcon, cloudStatus, notice, noticeOk, noticeBusy, noticeCounts, selectedKey, currentReady, scanReady, quotesLoading, quotes, selecting, selectedKeys, selView, selConfirm, flashKeys, chartinkChartDark, viewList, viewAll, allStocks, newCount }) {
   const list = viewList || activeList(book);
   const rows = visibleStocks(book, quotes, list);
   const on = normalizeLabelOn(book.labelOn);
@@ -71,7 +71,7 @@ export function watchlistHtml(book, { cloudIcon, refreshIcon, cloudStatus, notic
           const key = `${s.exchange}:${s.ticker}`;
           const picked = selecting && selectedKeys?.has?.(key);
           const flashing = flashKeys?.has?.(key);
-          const sel = [selectedKey === key && !flashing ? "fv-row-on" : "", picked ? "fv-row-sel" : "", flashing ? "fv-row-flash" : ""].filter(Boolean).join(" ");
+          const sel = [selectedKey === key && !flashing ? "fv-row-on" : "", picked ? "fv-row-sel" : "", flashing ? "fv-row-flash" : "", s.isNew ? "fv-new" : ""].filter(Boolean).join(" ");
           const q = quotes?.get?.(key);
           const pctCls = typeof q?.pct === "number" ? (q.pct > 0 ? "fv-up" : q.pct < 0 ? "fv-down" : "") : "";
           const showMcap = q && q.kind !== "index" && q.kind !== "derivative" && q.kind !== "other";
@@ -112,7 +112,7 @@ export function watchlistHtml(book, { cloudIcon, refreshIcon, cloudStatus, notic
 
   return `
       <div class="fv-head">
-        <p class="fv-phase fv-phase-warn">${BANNER}</p>
+        <p class="fv-phase fv-phase-warn"><span>${BANNER}</span><button type="button" class="fv-clear-new" id="fv-clear-new" ${newCount ? "" : "disabled"} title="${newCount ? `Clear the new-stock highlight (${newCount})` : "No newly added stocks"}">Clear New</button></p>
         ${
           chartinkChartDark
             ? `<p class="fv-chartink-site">Chartink website issue: stock row text on this chart can be hard to read in their Dark theme. <button type="button" class="fv-chartink-day" id="fv-chartink-day">Use Chartink Day</button></p>`

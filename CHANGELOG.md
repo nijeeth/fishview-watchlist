@@ -13,6 +13,7 @@ Second public release. Restore point for v1: git tag `v1-20261005`.
 - **Fish RS Board** (`fish-rs-board.pages.dev`) is a fourth supported site: compact dock, popup on/off toggle, per-row `+` buttons, and Scan of the results table.
 - **All Unique Stock** — computed union view of every stock across all lists, first in the picker and the default view. No stock cap; not stored or synced (fully offline). Right-click: labels apply to all copies, Copy adds to a list, Move relocates it everywhere, Delete asks for confirmation ("removed from ALL watchlists"). Add/Current disabled, Scan always creates a new list, bulk select off.
 - **Arrow-key navigation** — Up/Down walks the selection through the dock list and switches the TradingView chart, anywhere on the page; inactive while typing, in bulk select, or with a modal open.
+- **New-stock highlighting** — stocks added via Add/Current/`+`/Scan/CSV carry `isNew` in the book (≤50 per batch) and show a teal tint until any row interaction or the **Clear New** button in the warning row; the flag syncs through cloud and clears cross-browser.
 - `node --test` unit-test suite in `test/` covering `lists/book.js`, `ingest/csv.js`, `quotes/hours.js`, `lists/backup.js`.
 
 ### Changed
@@ -22,7 +23,7 @@ Second public release. Restore point for v1: git tag `v1-20261005`.
 - Row and menu hover highlight is light yellow; bulk-actions bar is compact; Copy/Move (row and bulk) open a floating destination picker with Back and create-new-list; hover shows the full list name.
 - The dock no longer mounts on the TradingView `/screener/` page.
 - Credit bar is dark navy at header height (36px) with a blue top border — Nijeeth + Fish.
-- Yahoo quote responses shared across tabs via a 45 s in-memory cache in the service worker; `All Unique Stock` view is kept after first cloud Connect.
+- Yahoo quotes are centralized in the service worker: a symbol-level cache in `chrome.storage.session` is shared by all tabs for 45 s (survives worker suspension), so overlapping lists across tabs fetch each symbol once. Manual Refresh bypasses the cache and always fetches. `All Unique Stock` view is kept after first cloud Connect.
 - CSV import refuses a file whose cleaned name matches an existing list (no silent `Name 2`/`Name 3`).
 
 ### Fixed
@@ -30,6 +31,7 @@ Second public release. Restore point for v1: git tag `v1-20261005`.
 - B-03/B-04 dock listener leak and pending cloud push on unmount. B-05/B-06 cloud push retry back-off + freshest-book push + fingerprint pull short-circuit. B-07/B-13 quote storm cap and weekend polling stop. B-08 Yahoo crumb persistence/dedup/retry. B-09 chart settle-wait. B-10 shared HTML escaper + cloud/backup name cleaning. B-11 request path allowlists. B-12 ticker charset `^ = _`, alias prefixes, unknown-prefix rejection. B-15/B-16 locale/minimise-key fixes. B-17 dead code. B-19 placeholder removed. B-20 dropdown no longer closes on quote refresh. B-18 all phase scaffolding removed.
 - Audit: render ReferenceError (A-01), closed shadow DOM (A-02), Fish RS live toggle (A-03), resize listener leak (A-04), narrowed cloud proxy + sender check (A-05), observer debounce (A-06), AUS label/unknown-exchange normalise (A-07), import-name cap (A-08), stale WAR entry (A-09).
 - Tester: T-01 import-name refusal + reserved `All Unique Stock`, T-02 All Unique after connect, T-03 picker hover titles, T-04 cross-tab quote cache, T-05 bulk long-press notice in All Unique.
+- Post-release audit: All Unique Copy no longer flags stocks as new, Clear New pill sizing, dead-context storage guards (`Extension context invalidated` no longer thrown when the extension reloads with tabs open).
 
 ### Removed
 

@@ -41,35 +41,66 @@ const DEFAULTS = {
   [SITE_PANEL.fishrs]: true,
 };
 
+function deadContext() {
+  try {
+    return !chrome?.runtime?.id;
+  } catch (_) {
+    return true;
+  }
+}
+
 export async function get(key) {
+  if (deadContext()) return DEFAULTS[key];
   return new Promise((resolve) => {
-    chrome.storage.local.get(key, (result) => {
-      if (result[key] === undefined) resolve(DEFAULTS[key]);
-      else resolve(result[key]);
-    });
+    try {
+      chrome.storage.local.get(key, (result) => {
+        if (chrome.runtime?.lastError || result[key] === undefined) resolve(DEFAULTS[key]);
+        else resolve(result[key]);
+      });
+    } catch (_) {
+      resolve(DEFAULTS[key]);
+    }
   });
 }
 
 export async function set(key, value) {
+  if (deadContext()) return;
   return new Promise((resolve) => {
-    chrome.storage.local.set({ [key]: value }, resolve);
+    try {
+      chrome.storage.local.set({ [key]: value }, () => resolve());
+    } catch (_) {
+      resolve();
+    }
   });
 }
 
 export async function getMany(keys) {
+  const out = {};
+  for (const key of keys) out[key] = DEFAULTS[key];
+  if (deadContext()) return out;
   return new Promise((resolve) => {
-    chrome.storage.local.get(keys, (result) => {
-      const out = {};
-      for (const key of keys) {
-        out[key] = result[key] === undefined ? DEFAULTS[key] : result[key];
-      }
+    try {
+      chrome.storage.local.get(keys, (result) => {
+        if (!chrome.runtime?.lastError) {
+          for (const key of keys) {
+            out[key] = result[key] === undefined ? DEFAULTS[key] : result[key];
+          }
+        }
+        resolve(out);
+      });
+    } catch (_) {
       resolve(out);
-    });
+    }
   });
 }
 
 export async function remove(keys) {
+  if (deadContext()) return;
   return new Promise((resolve) => {
-    chrome.storage.local.remove(keys, resolve);
+    try {
+      chrome.storage.local.remove(keys, () => resolve());
+    } catch (_) {
+      resolve();
+    }
   });
 }

@@ -92,7 +92,7 @@ async function loadOne(stock, force) {
   if (yahooPaused()) return hit || { ...BLANK, kind };
 
   const sym = yahooSymbol(stock.exchange, stock.ticker);
-  const q = await fetchYahooQuote(sym, stock.exchange);
+  const q = await fetchYahooQuote(sym, stock.exchange, force);
   if (!q) {
     failUntil.set(key, Date.now() + 5 * 60 * 1000);
     const row = hit || { ...BLANK, kind, fetchedAt: Date.now() };
@@ -134,7 +134,7 @@ export async function quotesForOpenList(stocks, { force = false } = {}) {
 
   if (todo.length && !yahooPaused()) {
     const byYahoo = todo.map((s) => ({ stock: s, yahoo: yahooSymbol(s.exchange, s.ticker) }));
-    const batch = await fetchYahooQuoteBatch(byYahoo.map((x) => x.yahoo));
+    const batch = await fetchYahooQuoteBatch(byYahoo.map((x) => x.yahoo), force);
     for (const { stock, yahoo } of byYahoo) {
       const kind = listingKind(stock.ticker, stock.exchange);
       const key = quoteKey(stock.exchange, stock.ticker);

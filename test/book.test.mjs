@@ -29,6 +29,7 @@ const {
   LIST_CAP,
   NAME_MAX,
   ALL_STOCKS_ID,
+  NEW_MARK_MAX,
   cleanListName,
   listNameError,
   parseSymbol,
@@ -38,6 +39,10 @@ const {
   allUniqueStocks,
   allUniqueList,
   addStock,
+  addStocks,
+  clearNewEverywhere,
+  clearNewFlags,
+  bookFingerprint,
 } = await import("../lists/book.js");
 
 test("cleanListName allows + - space, blocks other chars, caps at 25", () => {
@@ -105,6 +110,62 @@ test("allUniqueStocks unions across lists without dupes", () => {
   assert.deepEqual(keys, ["BSE:TCS", "NSE:RELIANCE", "NSE:TCS"]);
   assert.equal(allUniqueList(book).id, ALL_STOCKS_ID);
   assert.equal(allUniqueList(book).stocks.length, 3);
+});
+
+test("addStock flags the new stock; clearNewEverywhere removes it", async () => {
+  const book = normalizeBook({ lists: [{ id: "a", name: "A", stocks: [] }], activeId: "a" });
+  const res = await addStock(book, "a", "NSE:SBIN");
+  assert.equal(res.ok, true);
+  assert.equal(res.book.lists[0].stocks[0].isNew, true);
+  // flag survives normalizeBook (what saveBook runs)
+  assert.equal(normalizeBook(res.book).lists[0].stocks[0].isNew, true);
+  const clr = await clearNewEverywhere(res.book, "NSE", "SBIN");
+  assert.equal(clr.cleared, 1);
+  assert.equal(clr.book.lists[0].stocks[0].isNew, undefined);
+});
+
+test("addStocks flags <=20 added, strips flags above the mark max", async () => {
+  const book = normalizeBook({ lists: [{ id: "a", name: "A", stocks: [] }], activeId: "a" });
+  const few = await addStocks(book, "a", [
+    { exchange: "NSE", ticker: "T1" },
+    { exchange: "NSE", ticker: "T2" },
+  ]);
+  assert.equal(few.book.lists[0].stocks.every((s) => s.isNew === true), true);
+
+  const many = await addStocks(
+    book,
+    "a",
+    Array.from({ length: NEW_MARK_MAX + 1 }, (_, i) => ({ exchange: "NSE", ticker: `M${i}` }))
+  );
+  assert.equal(many.book.lists[0].stocks.every((s) => !s.isNew), true);
+});
+
+test("clearNewFlags clears one list or all lists", async () => {
+  const book = normalizeBook({
+    lists: [
+      { id: "a", name: "A", stocks: [{ exchange: "NSE", ticker: "T1", isNew: true }] },
+      { id: "b", name: "B", stocks: [{ exchange: "NSE", ticker: "T2", isNew: true }] },
+    ],
+    activeId: "a",
+  });
+  const one = await clearNewFlags(book, "a");
+  assert.equal(one.book.lists[0].stocks[0].isNew, undefined);
+  assert.equal(one.book.lists[1].stocks[0].isNew, true);
+  const all = await clearNewFlags(book, ALL_STOCKS_ID);
+  assert.equal(all.cleared, 2);
+});
+
+test("bookFingerprint changes when a new-flag is cleared", async () => {
+  const book = normalizeBook({ lists: [{ id: "a", name: "A", stocks: [{ exchange: "NSE", ticker: "T1", isNew: true }] }] });
+  const cleared = await clearNewEverywhere(book, "NSE", "T1");
+  assert.notEqual(bookFingerprint(book), bookFingerprint(cleared.book));
+});
+
+test("addStock with markNew:false does not flag (AUS copy path)", async () => {
+  const book = normalizeBook({ lists: [{ id: "a", name: "A", stocks: [] }], activeId: "a" });
+  const res = await addStock(book, "a", "NSE:SBIN", { markNew: false });
+  assert.equal(res.ok, true);
+  assert.equal(res.book.lists[0].stocks[0].isNew, undefined);
 });
 
 test("addStock refuses the STOCK_CAP + 1th stock", async () => {

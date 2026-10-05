@@ -119,7 +119,7 @@ export function openRowMenu({ panel, e, book, ex, ticker, applyBook, viewAll = f
   renderMain();
 
   const copyTo = (b, fromId, toId, e2, t) =>
-    viewAll ? addStock(b, toId, `${e2}:${t}`) : copyStock(b, fromId, toId, e2, t);
+    viewAll ? addStock(b, toId, `${e2}:${t}`, { markNew: false }) : copyStock(b, fromId, toId, e2, t);
   const moveTo = (b, fromId, toId, e2, t) =>
     viewAll ? moveStockEverywhere(b, toId, e2, t) : moveStock(b, fromId, toId, e2, t);
 

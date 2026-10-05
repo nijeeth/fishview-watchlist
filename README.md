@@ -70,6 +70,7 @@ Everything is saved in your browser by default. You can also sync your lists to 
 - **Sort** by name, price, % change, market cap or label, ascending or descending.
 - **Filter** by label. Several labels can be on at once, and a row shows if it matches any of them.
 - **Bulk select** up to 30 rows to label, copy, move or delete them together.
+- **New stocks stay highlighted** — anything added via Add, Current, `+`, Scan or CSV keeps a teal tint (batches up to 50) until you click, right-click or long-press the row, or press **Clear New**. The highlight syncs with cloud.
 - **Local backup and restore** of all lists and labels as a JSON file.
 - New installs start with a **Default** list (SBIN, HDFCBANK, RELIANCE) and a **Demo** list.
 
@@ -90,7 +91,7 @@ Everything is saved in your browser by default. You can also sync your lists to 
 ### Quotes
 - **Price (CMP), % change and market cap** from Yahoo Finance.
 - Covers the **open list only** and refreshes **every 60 seconds**. **Not realtime.** Quotes are not saved.
-- A manual **refresh** (header icon) retries the open list. Nothing is polled while the dock is closed.
+- Quotes are fetched once per symbol in the background worker and shared by every open tab — even tabs showing different lists. A manual **refresh** (header icon) bypasses the shared cache and fetches fresh. Nothing is polled while the dock is closed.
 - A caution banner on the Watchlist tab reminds you that the data is not realtime.
 
 ### Cloud (optional)
@@ -605,6 +606,7 @@ The toolbar popup turns the panel on or off for each supported site. The extensi
 LISTS
 • Up to 50 watchlists with up to 200 stocks each
 • All Unique Stock view — every stock across all your lists in one place, stored nowhere extra
+• Newly added stocks stay highlighted until you view them — clear one by clicking it, or all with Clear New
 • Colour labels (green, blue, orange, red) and label filters
 • Sort by name, price, % change, market cap or label
 • Bulk select up to 30 rows to label, copy, move or delete
