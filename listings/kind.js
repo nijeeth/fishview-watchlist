@@ -1,19 +1,13 @@
-import { notBuilt } from "../shared/placeholder.js";
-
 export const INDEX_NAMES = new Set([
   "NIFTY", "NIFTY50", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "NIFTYNXT50",
   "SENSEX", "BANKEX", "INDIAVIX", "CNXAUTO", "CNXIT", "CNXPHARMA", "CNXFMCG",
   "CNXMETAL", "CNXREALTY", "CNXENERGY", "CNXINFRA", "NIFTYIT", "NIFTYBANK",
 ]);
 
-export function placeholderMessage() {
-  return notBuilt(2);
-}
-
 function cleanTicker(raw) {
   return String(raw || "")
     .toUpperCase()
-    .replace(/[^A-Z0-9.&-]/g, "")
+    .replace(/[^A-Z0-9.&^=_-]/g, "")
     .slice(0, 24);
 }
 

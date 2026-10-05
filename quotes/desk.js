@@ -154,7 +154,9 @@ export async function quotesForOpenList(stocks, { force = false } = {}) {
       const q = cache.get(quoteKey(s.exchange, s.ticker));
       return !q || typeof q.price !== "number";
     });
-    await mapPool(missed, CONCURRENCY, (s) => loadOne(s, true));
+    // Cap per-symbol retries and respect the failUntil back-off on auto polls
+    // (manual refresh passes force=true and still bypasses it).
+    await mapPool(missed.slice(0, 25), CONCURRENCY, (s) => loadOne(s, force));
   }
 
   const map = new Map();

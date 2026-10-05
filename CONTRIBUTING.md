@@ -4,7 +4,7 @@ Thanks for your interest in FishView Watchlist! Contributions are welcome, wheth
 
 FishView is a Chrome Manifest V3 extension with one focused purpose: a stock watchlist dock beside TradingView, Screener.in, and Chartink. The dock keeps the page visible, stores lists locally by default, shows delayed quotes for the open list, and can optionally sync to the user's own Supabase project.
 
-**Version:** v1.0.0  
+**Version:** v2.0.0  
 **Support / security:** [nijeethfish@gmail.com](mailto:nijeethfish@gmail.com)  
 **Privacy policy:** [https://sites.google.com/view/fishviewwatchlist-privacy](https://sites.google.com/view/fishviewwatchlist-privacy)
 
@@ -21,7 +21,7 @@ FishView is a Chrome Manifest V3 extension with one focused purpose: a stock wat
 1. Search the existing issues before opening a new one.
 2. For a large or behaviour-changing proposal, open an issue first so the scope and design can be discussed.
 3. Read [`ARCHITECTURE.md`](./ARCHITECTURE.md), [`PHASES.md`](./PHASES.md), and the developer section of [`README.md`](./README.md).
-4. Keep the architecture documents and README in step with **v1.0.0**.
+4. Keep the architecture documents and README in step with **v2.0.0**.
 
 Repository: clone or copy this folder. Contact [nijeethfish@gmail.com](mailto:nijeethfish@gmail.com) if you need a remote URL.
 
@@ -30,7 +30,7 @@ Repository: clone or copy this folder. Contact [nijeethfish@gmail.com](mailto:ni
 Please include enough detail for someone else to reproduce the problem:
 
 - Chrome version.
-- FishView Watchlist version (**v1.0.0**).
+- FishView Watchlist version (**v2.0.0**).
 - Site: TradingView, Screener.in, or Chartink.
 - Steps to reproduce.
 - Expected behaviour.
@@ -47,10 +47,10 @@ Feature ideas should fit FishView's single purpose: a watchlist dock beside char
 Respect the existing product caps unless a change to them has been discussed first:
 
 - 50 lists maximum.
-- 150 stocks per list maximum.
+- 200 stocks per list maximum.
 - 30 rows maximum in a bulk selection.
 - 5 symbols maximum for one paste/Add operation.
-- CSV import and Scan reject more than 150 stocks rather than partially adding them.
+- CSV import and Scan reject more than 200 stocks rather than partially adding them.
 
 The Cloud Backup control is hidden; Connect already syncs lists. Use Backup Local / Restore Backup for a file on this computer.
 
@@ -89,7 +89,6 @@ Each domain folder has its own `index.js` entry, and the dock in `shell/` calls 
 
 | Folder | Owns |
 |---|---|
-| `config/` | Watchlist caution banner (`phase.js`) |
 | `persist/` | `chrome.storage.local` keys |
 | `lists/` | List CRUD, labels, sorting, filtering, caps, bulk actions, and local backup JSON |
 | `ingest/` | Paste, CSV import/export, and bulk logging |
@@ -144,11 +143,11 @@ When adding a site, update the manifest matches and host permissions, web-access
 There is no automated test suite described by the project. Before opening a pull request, run the relevant manual checks below and report what you tested:
 
 - [ ] **Dock:** It appears on TradingView, Screener.in, and Chartink; pushes the page; clamps to TV 220–420 px and web 180–280 px; `×` and header click minimise; each popup toggle hides the dock on its site.
-- [ ] **Lists:** Create, rename, and delete lists. The 51st list is refused. Invalid and duplicate names are refused. The 151st stock is refused.
+- [ ] **Lists:** Create, rename, and delete lists. The 51st list is refused. Invalid and duplicate names are refused. The 201st stock is refused.
 - [ ] **Labels, sort, and filter:** Label sorting keeps unlabeled rows last in both directions. The last filter tick cannot be removed. Closing a filter with none selected restores all labels.
 - [ ] **Bulk:** A 500 ms long-press enters batch mode. The 31st selection is refused. Copy and move add only what fits and arrive unlabeled.
-- [ ] **Ingest:** Add accepts five comma-separated symbols and refuses more. A CSV with 151 rows is rejected completely. Bare `RELIANCE` resolves to NSE first.
-- [ ] **Sites:** Scan with more than 150 results adds nothing. Row `+` works. Current works from a Screener.in company URL and a Chartink stock URL.
+- [ ] **Ingest:** Add accepts five comma-separated symbols and refuses more. A CSV with 201 rows is rejected completely. Bare `RELIANCE` resolves to NSE first.
+- [ ] **Sites:** Scan with more than 200 results adds nothing. Row `+` works. Current works from a Screener.in company URL and a Chartink stock URL.
 - [ ] **Charts:** Row click switches TradingView without reloading. Current on a US stock stores `NASDAQ:` or `NYSE:`, never `BATS`, `CBOE`, or `CBOEONE`.
 - [ ] **Quotes:** Quotes appear only for the open list. Other lists are not fetched until opened. Nothing is polled with the dock closed. Refresh retries.
 - [ ] **Backup:** Backup Local and Restore Backup round-trip all lists and labels, and restore overwrites the current data. The Cloud Backup control stays hidden.

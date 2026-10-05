@@ -4,9 +4,9 @@
 
 **Effective date:** September 29, 2026
 
-**Last updated:** September 30, 2026
+**Last updated:** October 6, 2026 (v2.0.0 — added Fish RS Board site)
 
-**Published page:** [https://sites.google.com/view/fishviewwatchlist-privacy](https://sites.google.com/view/fishviewwatchlist-privacy)
+**Published page:** [https://sites.google.com/view/fishview-watchlist-privacy](https://sites.google.com/view/fishview-watchlist-privacy)
 
 This privacy policy explains what information the FishView Watchlist Chrome extension ("FishView", "the extension", "we", "us") handles, where that information goes, and how you can control or delete it.
 
@@ -28,16 +28,16 @@ If you have any question about this policy or your data, contact us at **nijeeth
 
 ## What FishView Watchlist does
 
-FishView Watchlist adds a stock watchlist panel (the "dock") to the right side of **TradingView**, **Screener.in** and **Chartink**. With it you can:
+FishView Watchlist adds a stock watchlist panel (the "dock") to the right side of **TradingView**, **Screener.in**, **Chartink** and **Fish RS Board**. With it you can:
 
-- keep up to 50 watchlists of up to 150 stocks each, with colour labels, sorting, filtering and bulk editing;
-- add stocks by typing or pasting symbols, importing a CSV file, scanning a Screener.in or Chartink results table, using the "+" button beside a stock row, or using "Current" to add the stock you are viewing;
+- keep up to 50 watchlists of up to 200 stocks each, with colour labels, sorting, filtering and bulk editing;
+- add stocks by typing or pasting symbols, importing a CSV file, scanning a Screener.in, Chartink or Fish RS Board results table, using the "+" button beside a stock row, or using "Current" to add the stock you are viewing;
 - click a stock on TradingView to switch the chart to it;
 - see delayed price, % change and market cap for the list you have open;
 - save and restore a backup file of your lists;
 - optionally sync your lists between computers using your own Supabase project.
 
-The extension runs only on TradingView, Screener.in and Chartink. It does not run on any other website.
+The extension runs only on TradingView, Screener.in, Chartink and Fish RS Board. It does not run on any other website.
 
 ## Information we collect
 
@@ -50,7 +50,7 @@ The rest of this policy explains the information that the extension keeps **on y
 FishView saves the following in Chrome's local extension storage (`chrome.storage.local`) on your device. This storage is not synced by Chrome to other devices and is not sent to us.
 
 - **Your watchlists:** list names, the stocks in each list (exchange and ticker, for example NSE:SBIN), colour labels, which list is open, and your sort and label-filter choices.
-- **Display settings:** Day or Night theme, the width of the dock, whether the dock is minimised, and whether the dock is switched on for TradingView, Screener.in and Chartink.
+- **Display settings:** Day or Night theme, the width of the dock, whether the dock is minimised, and whether the dock is switched on for TradingView, Screener.in, Chartink and Fish RS Board.
 - **A cached list of public stock symbols:** the public NSE/BSE equity symbol list from Fyers, used to match stock names to the right exchange. It contains no personal information.
 - **Cloud sync details (only if you use cloud sync):** your Supabase project URL, your project's publishable key, the email address of the login you created in your Supabase project, your Supabase login session, and the time of the last cloud copy (used to decide which copy is newer).
 - **A short diagnostic log (`fvDiagLog`):** recent cloud events on this device (for example Connect, Sync, HTTP status). It does not include your watchlists, stock symbols, password, or access tokens. It stays on this computer unless you use **Log** to download a text file and send it yourself (for example by email). If Cloud is not configured and no events were recorded, there is no log file.
@@ -92,12 +92,12 @@ Cloud sync is off unless you set it up. To use it, you create your own free Supa
 - **Address used:** only the project address you enter (your-project.supabase.co).
 - **Who can see it:** the Supabase project belongs to you. **We have no access to it.** Your project's security rules (Row Level Security, set up by the provided setup script) allow each login to read and write only its own row. Supabase, the company, hosts your project and handles that data under your agreement with Supabase and Supabase's own privacy policy.
 
-### TradingView, Screener.in and Chartink (sites where the dock runs)
+### TradingView, Screener.in, Chartink and Fish RS Board (sites where the dock runs)
 
 FishView **does not send any information to these sites.** It draws the dock on the page and reads only what its features need, inside your browser:
 
 - **TradingView:** a small script on the page reads the symbol of the current chart when you click **Current**, and switches the chart when you click a stock in your list.
-- **Screener.in and Chartink:** FishView reads the stock links in results tables (to place the "+" buttons and to **Scan** a results table), and reads the address of the company or stock page you are on when you click **Current**, to work out which stock it is.
+- **Screener.in, Chartink and Fish RS Board:** FishView reads the stock links in results tables (to place the "+" buttons and to **Scan** a results table). On Screener.in and Chartink it also reads the address of the company or stock page you are on when you click **Current**, to work out which stock it is.
 
 Stocks you add this way are saved in your watchlist on your device. Like any other list entry, their ticker symbols are then sent to Yahoo for prices (when that list is open) and to your own Supabase project if you use cloud sync. FishView does not record your browsing history and does not collect anything else from these pages.
 
@@ -110,7 +110,7 @@ FishView is installed and updated through the Chrome Web Store, which is run by 
 - **storage:** saves your watchlists, labels, display settings, per-site on/off settings, optional cloud details (never your password), a short local diagnostic log of cloud events (no lists or tokens), and the cached public symbol list on your device.
 - **alarms:** lets the extension schedule its own background tasks with Chrome's timer feature. It does not give access to any of your data.
 - **Access to TradingView (www., in., and es. tradingview.com):** to show the dock, switch the chart when you click a stock, and read the current chart symbol for **Current**.
-- **Access to Screener.in and Chartink:** to show the dock and support **Scan**, the "+" buttons and **Current**.
+- **Access to Screener.in, Chartink and Fish RS Board:** to show the dock and support **Scan**, the "+" buttons and **Current**.
 - **Access to public.fyers.in:** to download the public NSE/BSE symbol list (at most once a day).
 - **Access to Yahoo Finance (query1/query2.finance.yahoo.com, fc.yahoo.com, finance.yahoo.com):** to fetch delayed prices for the open list and the cookie/"crumb" Yahoo requires.
 - **Access to supabase.co addresses:** for optional cloud sync with your own Supabase project. A wildcard (`*.supabase.co`) is needed because every project has its own address. It is used only after you click Connect.
@@ -125,7 +125,7 @@ FishView does **not** request access to all websites, your tabs, browsing histor
 - We do **not** use analytics, tracking, crash reporting or advertising services.
 - We do **not** show ads or use your data for advertising, profiling, or to decide creditworthiness or lending.
 - We do **not** store your cloud password.
-- We do **not** read your browsing history or run on sites other than TradingView, Screener.in and Chartink.
+- We do **not** read your browsing history or run on sites other than TradingView, Screener.in, Chartink and Fish RS Board.
 - We do **not** place trades or connect to any brokerage account.
 - We do **not** use remote code. All of the extension's code is included in the package reviewed by the Chrome Web Store. Data received from Yahoo, Fyers and Supabase is treated only as data and is never run as code.
 
@@ -136,7 +136,7 @@ FishView does **not** request access to all websites, your tabs, browsing histor
 - Chrome Web Store User Data Policy: [https://developer.chrome.com/docs/webstore/program-policies/policies](https://developer.chrome.com/docs/webstore/program-policies/policies)
 - Limited Use requirements: [https://developer.chrome.com/docs/webstore/program-policies/limited-use](https://developer.chrome.com/docs/webstore/program-policies/limited-use)
 
-This means that information handled by the extension is used only to provide its single purpose (a stock watchlist beside TradingView, Screener.in and Chartink, with delayed quotes and optional sync to your own Supabase project); it is transferred to third parties only as described in this policy and only when needed for that purpose; it is never used or transferred for advertising, sold to data brokers, or used to determine creditworthiness or for lending; and no person (including us) reads it.
+This means that information handled by the extension is used only to provide its single purpose (a stock watchlist beside TradingView, Screener.in, Chartink and Fish RS Board, with delayed quotes and optional sync to your own Supabase project); it is transferred to third parties only as described in this policy and only when needed for that purpose; it is never used or transferred for advertising, sold to data brokers, or used to determine creditworthiness or for lending; and no person (including us) reads it.
 
 ## Data retention and how to delete your data
 
@@ -178,9 +178,9 @@ These services have their own privacy policies, which apply to information they 
 - **FYERS Privacy Policy** (public symbol list): [https://fyers.in/privacy-policy](https://fyers.in/privacy-policy)
 - **Google Privacy Policy** (Chrome and the Chrome Web Store): [https://policies.google.com/privacy](https://policies.google.com/privacy)
 
-TradingView, Screener.in and Chartink have their own privacy policies for your use of their websites. FishView does not send them any information.
+TradingView, Screener.in, Chartink and Fish RS Board have their own privacy policies for your use of their websites. FishView does not send them any information.
 
-FishView Watchlist is not affiliated with, endorsed by or sponsored by TradingView, Screener.in, Chartink, Yahoo, Supabase or Fyers.
+FishView Watchlist is not affiliated with, endorsed by or sponsored by TradingView, Screener.in, Chartink, Fish RS Board, Yahoo, Supabase or Fyers.
 
 ## Changes to this policy
 

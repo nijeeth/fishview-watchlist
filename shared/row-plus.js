@@ -23,8 +23,16 @@ export function watchTablePlus({ matchHref, tickerFromHref }) {
     }
   };
 
+  let timer = null;
+  const debounced = () => {
+    if (timer) return;
+    timer = setTimeout(() => {
+      timer = null;
+      decorate();
+    }, 150);
+  };
   decorate();
-  const obs = new MutationObserver(() => decorate());
+  const obs = new MutationObserver(debounced);
   obs.observe(document.body, { childList: true, subtree: true });
   return () => obs.disconnect();
 }

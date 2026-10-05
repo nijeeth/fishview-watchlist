@@ -1,12 +1,7 @@
-import { get, set, remove, CLOUD_KEYS } from "../persist/index.js";
+import { get, set, remove, CLOUD_KEYS, LIST_BOOK_KEY } from "../persist/index.js";
 import { normalizeBook, saveBook, bookFingerprint, mergeKeepBoth } from "../lists/book.js";
 import { SETUP_SQL } from "./sql.js";
-import { notBuilt } from "../shared/placeholder.js";
 import { noteDiag, formatDiagReport, diagLogState, diagLogFileName } from "./diag.js";
-
-export function placeholderMessage() {
-  return notBuilt(7);
-}
 
 export { SETUP_SQL };
 
@@ -381,6 +376,51 @@ async function readRemote(c) {
   return { ok: true, row, session: live.session, url: live.url, key: live.key };
 }
 
+let pushRetryTimer = null;
+let pushRetryDelay = 30000;
+let pushRetryBook = null;
+
+function isRetryableError(error) {
+  return /network|fetch|offline|timeout|reach|internet disconnected|network changed/i.test(
+    String(error || "")
+  );
+}
+
+function armPushRetry(book) {
+  pushRetryBook = book;
+  if (pushRetryTimer) return;
+  const delay = pushRetryDelay;
+  pushRetryDelay = Math.min(pushRetryDelay * 2, 10 * 60 * 1000);
+  pushRetryTimer = setTimeout(() => {
+    pushRetryTimer = null;
+    void pushCloudBook(pushRetryBook);
+  }, delay);
+}
+
+function clearPushRetry() {
+  if (pushRetryTimer) {
+    clearTimeout(pushRetryTimer);
+    pushRetryTimer = null;
+  }
+  pushRetryDelay = 30000;
+  pushRetryBook = null;
+}
+
+async function freshestBook(fallback) {
+  try {
+    const stored = normalizeBook(await get(LIST_BOOK_KEY), { fallbackDefault: false });
+    if (
+      stored.lists.length &&
+      bookFingerprint(stored) !== bookFingerprint(normalizeBook(fallback, { fallbackDefault: false }))
+    ) {
+      return stored;
+    }
+  } catch (_) {
+    /* keep the scheduled copy */
+  }
+  return fallback;
+}
+
 export async function pushCloudBook(book) {
   const c = await creds();
   if (!c.session?.access_token) {
@@ -392,6 +432,7 @@ export async function pushCloudBook(book) {
   try {
     const live = await refreshIfNeeded(c);
     if (!live.ok) {
+      if (isRetryableError(live.error)) armPushRetry(book);
       noteDiag({ kind: "push", result: "fail", err: live.error, hasSession: !!live.session?.access_token });
       endCloudWork(false, live.error);
       return live;
@@ -399,6 +440,7 @@ export async function pushCloudBook(book) {
     if (!live.session.dbReady) {
       const probe = await probeTable(live, live.session.access_token);
       if (probe.network || probe.auth) {
+        if (probe.network) armPushRetry(book);
         noteDiag({ kind: "push", result: "fail", err: probe.error || "Network issue" });
         endCloudWork(false, probe.error || "Network issue");
         return { ok: false, error: probe.error || "Network issue" };
@@ -412,7 +454,7 @@ export async function pushCloudBook(book) {
       live.session.dbReady = true;
       await writeSession(live.session);
     }
-    const clean = normalizeBook(book, { fallbackDefault: false });
+    const clean = normalizeBook(await freshestBook(book), { fallbackDefault: false });
     if (!clean.lists.length) {
       endCloudWork(false, "Nothing to sync");
       return { ok: false, error: "Nothing to sync" };
@@ -427,17 +469,20 @@ export async function pushCloudBook(book) {
       extra: { Prefer: "return=minimal,resolution=merge-duplicates" },
     });
     if (!res.ok) {
+      if (isTransportFail(res)) armPushRetry(book);
       const error = errFromBody(res.json, "Could not save to cloud");
       noteDiag({ kind: "push", result: "fail", status: res.status, err: error });
       endCloudWork(false, error);
       return { ok: false, error };
     }
+    clearPushRetry();
     await set(CLOUD_KEYS.bookAt, updatedAt);
     emitCloudSync({ linked: true });
     endCloudWork(true);
     noteDiag({ kind: "push", result: "ok" });
     return { ok: true };
   } catch (e) {
+    armPushRetry(book);
     const error = String(e?.message || e || "Could not save to cloud");
     noteDiag({ kind: "push", result: "fail", err: error });
     endCloudWork(false, error);
@@ -468,6 +513,12 @@ export async function pullCloudBook(localBook) {
     }
     const localAt = String((await get(CLOUD_KEYS.bookAt)) || "");
     const remoteAt = String(remote.row.updated_at || "");
+    if (remoteBookIsLocal(remote.row.book, localBook)) {
+      if (remoteAt && remoteAt !== localAt) await set(CLOUD_KEYS.bookAt, remoteAt);
+      noteDiag({ kind: "pull", result: "same" });
+      endCloudWork(true);
+      return { ok: true, book: localBook };
+    }
     if (localAt && remoteAt && localAt >= remoteAt) {
       noteDiag({ kind: "pull", result: "keep" });
       endCloudWork(true);
@@ -486,6 +537,17 @@ export async function pullCloudBook(localBook) {
   }
 }
 
+function remoteBookIsLocal(remoteRaw, localBook) {
+  try {
+    const remoteBook = normalizeBook(remoteRaw, { fallbackDefault: false });
+    if (!remoteBook.lists.length) return false;
+    const localNorm = normalizeBook(localBook, { fallbackDefault: false });
+    return bookFingerprint(localNorm) === bookFingerprint(remoteBook);
+  } catch (_) {
+    return false;
+  }
+}
+
 let pushTimer = null;
 export function scheduleCloudPush(book) {
   if (pushTimer) clearTimeout(pushTimer);
@@ -500,6 +562,7 @@ export function cancelPendingCloudPush() {
     clearTimeout(pushTimer);
     pushTimer = null;
   }
+  clearPushRetry();
   if (syncInflight === 0 && syncInfo.linked && syncInfo.status === "pending") {
     emitCloudSync({ status: "idle", error: "" });
   }

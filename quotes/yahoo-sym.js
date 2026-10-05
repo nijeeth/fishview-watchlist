@@ -31,10 +31,14 @@ export function yahooSymbol(exchange, ticker) {
   const ex = String(exchange || "NSE").toUpperCase();
   if (INDEX_YAHOO[t]) return INDEX_YAHOO[t];
   if (INDEX_NAMES.has(t)) return `^${t.replace(/[^A-Z0-9]/g, "")}`;
-  if (ex === "NASDAQ" || ex === "NYSE") return t;
-  if (ex === "BSE") return `${t}.BO`;
-  if (ex === "NSE") return `${t}.NS`;
-  return t;
+  // Yahoo-native index/future symbols go through unchanged.
+  if (t.startsWith("^") || t.includes("=")) return t;
+  // TradingView underscore form -> Yahoo hyphen form (BRK_B -> BRK-B).
+  const y = t.replace(/_/g, "-");
+  if (ex === "NASDAQ" || ex === "NYSE") return y;
+  if (ex === "BSE") return `${y}.BO`;
+  if (ex === "NSE") return `${y}.NS`;
+  return y;
 }
 
 export { listingKind };

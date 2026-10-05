@@ -2,7 +2,9 @@ import { get, set, LIST_BOOK_KEY } from "../persist/index.js";
 import { demoList } from "./demo.js";
 
 export const LIST_CAP = 50;
-export const STOCK_CAP = 150;
+export const STOCK_CAP = 200;
+export const ALL_STOCKS_ID = "__ALL__";
+export const NAME_MAX = 25;
 export const BATCH_CAP = 30;
 
 export const LABELS = ["green", "blue", "orange", "red"];
@@ -48,7 +50,6 @@ export function normalizeLabelOn(raw) {
   } else if (LABELS.includes(raw)) {
     for (const k of FILTER_KEYS) on[k] = k === raw;
   }
-  if (!FILTER_KEYS.some((k) => on[k])) return on;
   return on;
 }
 
@@ -64,20 +65,22 @@ export function nameTaken(book, name, exceptId) {
   return book.lists.some((l) => l.id !== exceptId && String(l.name || "").trim().toLowerCase() === n);
 }
 
-export function cleanListName(raw) {
+export function cleanListName(raw, max = NAME_MAX) {
   return String(raw || "")
-    .replace(/[^A-Za-z0-9 -]/g, "")
+    .replace(/[^A-Za-z0-9 +-]/g, "")
     .replace(/[ ]+/g, " ")
     .trim()
-    .slice(0, 40);
+    .slice(0, max);
 }
 
 export function listNameError(raw) {
   const trimmed = String(raw || "").trim();
   if (!trimmed) return "Name required";
-  if (/[^A-Za-z0-9 -]/.test(trimmed) || !/[A-Za-z0-9]/.test(trimmed)) {
-    return "Only letters, numbers, spaces and hyphens";
+  if (trimmed.length > NAME_MAX) return `Max ${NAME_MAX} characters`;
+  if (/[^A-Za-z0-9 +-]/.test(trimmed) || !/[A-Za-z0-9]/.test(trimmed)) {
+    return "Only letters, numbers, spaces, hyphens and plus";
   }
+  if (trimmed.toLowerCase() === "all unique stock") return "Reserved name";
   return "";
 }
 
@@ -123,7 +126,7 @@ export function defaultBook() {
 function cleanTicker(raw) {
   return String(raw || "")
     .toUpperCase()
-    .replace(/[^A-Z0-9.&-]/g, "")
+    .replace(/[^A-Z0-9.&^=_-]/g, "")
     .slice(0, 24);
 }
 
@@ -156,11 +159,15 @@ export function canonicalExchange(raw) {
   return EX_ALIAS[e] || e;
 }
 
+const KNOWN_EXCHANGES = new Set(["NSE", "BSE", "NASDAQ", "NYSE"]);
+
 export function parseSymbol(raw) {
   const s = String(raw || "").trim().toUpperCase();
   const m = s.match(/^([A-Z0-9]{1,16})\s*:\s*(.+)$/);
-  if (m && /^(NSE|BSE|NASDAQ|NYSE)$/.test(canonicalExchange(m[1]) || m[1])) {
-    return { exchange: canonicalExchange(m[1]) || m[1], ticker: cleanTicker(m[2]) };
+  if (m) {
+    const exchange = canonicalExchange(m[1]);
+    if (!KNOWN_EXCHANGES.has(exchange)) return { exchange: "", ticker: "" };
+    return { exchange, ticker: cleanTicker(m[2]) };
   }
   return { exchange: "NSE", ticker: cleanTicker(s) };
 }
@@ -228,12 +235,12 @@ export function normalizeBook(raw, opts = {}) {
         const stocks = Array.isArray(list?.stocks) ? list.stocks : [];
         return {
           id: String(list?.id || newId()),
-          name: String(list?.name || `List ${i + 1}`).slice(0, 40) || `List ${i + 1}`,
+          name: cleanListName(list?.name, 80) || `List ${i + 1}`,
           stocks: stocks.slice(0, STOCK_CAP).map((s) => ({
             exchange: canonicalExchange(s?.exchange) || "NSE",
             ticker: cleanTicker(s?.ticker),
             label: LABELS.includes(s?.label) ? s.label : null,
-          })).filter((s) => s.ticker),
+          })).filter((s) => s.ticker && KNOWN_EXCHANGES.has(s.exchange)),
         };
       })
       .filter((list) => list.id),
@@ -278,14 +285,85 @@ export function activeList(book) {
   return book.lists.find((l) => l.id === book.activeId) || book.lists[0];
 }
 
+/** Computed union view across all lists. Not stored, not synced. */
+export function allUniqueStocks(book) {
+  const seen = new Map();
+  for (const l of book?.lists || []) {
+    for (const s of l.stocks || []) {
+      const k = `${s.exchange}:${s.ticker}`;
+      const prev = seen.get(k);
+      if (!prev) seen.set(k, { exchange: s.exchange, ticker: s.ticker, label: s.label || null });
+      else if (!prev.label && s.label) prev.label = s.label;
+    }
+  }
+  return [...seen.values()];
+}
+
+export function allUniqueList(book) {
+  return { id: ALL_STOCKS_ID, name: "All Unique Stock", stocks: allUniqueStocks(book) };
+}
+
+export async function removeStockEverywhere(book, exchange, ticker) {
+  const next = clone(book);
+  let removed = 0;
+  for (const l of next.lists) {
+    const before = l.stocks.length;
+    l.stocks = l.stocks.filter((s) => !(s.ticker === ticker && s.exchange === exchange));
+    removed += before - l.stocks.length;
+  }
+  if (!removed) return { ok: false, error: "Not in any list", book };
+  return {
+    ok: true,
+    removed,
+    message: `Removed from ${removed} list${removed === 1 ? "" : "s"}`,
+    book: await saveBook(next),
+  };
+}
+
+export async function setLabelEverywhere(book, exchange, ticker, label) {
+  const lab = LABELS.includes(label) ? label : null;
+  const next = clone(book);
+  let updated = 0;
+  for (const l of next.lists) {
+    for (const s of l.stocks) {
+      if (s.ticker === ticker && s.exchange === exchange) {
+        s.label = lab;
+        updated += 1;
+      }
+    }
+  }
+  if (!updated) return { ok: false, error: "Not in any list", book };
+  return { ok: true, updated, book: await saveBook(next) };
+}
+
+export async function moveStockEverywhere(book, toId, exchange, ticker) {
+  const next = clone(book);
+  const to = next.lists.find((l) => l.id === toId);
+  if (!to) return { ok: false, error: "List not found", book };
+  if (to.stocks.some((s) => s.ticker === ticker && s.exchange === exchange)) {
+    return { ok: false, error: "Already in that list", book };
+  }
+  let removed = 0;
+  for (const l of next.lists) {
+    if (l.id === toId) continue;
+    const before = l.stocks.length;
+    l.stocks = l.stocks.filter((s) => !(s.ticker === ticker && s.exchange === exchange));
+    removed += before - l.stocks.length;
+  }
+  if (!removed) return { ok: false, error: "Not in any list", book };
+  if (to.stocks.length >= STOCK_CAP) return { ok: false, error: `That list is full (${STOCK_CAP})`, book };
+  to.stocks.push({ exchange, ticker, label: null });
+  return { ok: true, book: await saveBook(next) };
+}
+
 function quoteNum(quotes, stock, field) {
   const q = quotes?.get?.(`${stock.exchange}:${stock.ticker}`);
   const n = q?.[field];
   return typeof n === "number" && Number.isFinite(n) ? n : null;
 }
 
-export function visibleStocks(book, quotes) {
-  const list = activeList(book);
+export function visibleStocks(book, quotes, list) {
+  list = list || activeList(book);
   const on = normalizeLabelOn(book.labelOn);
   let rows = list.stocks.filter((s) => {
     if (!s.label || !LABELS.includes(s.label)) return on.none;
@@ -380,10 +458,7 @@ export async function addStock(book, listId, raw) {
 }
 
 function tickerAllowed(ticker) {
-  if (!ticker) return false;
-  const letters = ticker.replace(/[^A-Z]/g, "");
-  if (letters.length >= 3 && new Set(letters).size === 1) return false;
-  return true;
+  return !!ticker;
 }
 
 export async function addStocks(book, listId, items) {

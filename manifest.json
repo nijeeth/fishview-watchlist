@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "FishView Watchlist",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "minimum_chrome_version": "111",
   "description": "A stock watchlist dock beside your chart or screener. Lists stay on this computer. Delayed quotes. Optional sync.",
   "icons": {
@@ -19,6 +19,7 @@
     "https://screener.in/*",
     "https://chartink.com/*",
     "https://www.chartink.com/*",
+    "https://fish-rs-board.pages.dev/*",
     "https://public.fyers.in/*",
     "https://query1.finance.yahoo.com/*",
     "https://query2.finance.yahoo.com/*",
@@ -48,7 +49,8 @@
         "https://www.screener.in/*",
         "https://screener.in/*",
         "https://chartink.com/*",
-        "https://www.chartink.com/*"
+        "https://www.chartink.com/*",
+        "https://fish-rs-board.pages.dev/*"
       ],
       "js": ["shell/boot.js"],
       "css": ["shell/page.css"],
@@ -68,7 +70,6 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "config/*.js",
         "persist/*.js",
         "lists/*.js",
         "ingest/*.js",
@@ -80,6 +81,7 @@
         "sites/charts/*.js",
         "sites/screener/*.js",
         "sites/chartink/*.js",
+        "sites/fishrs/*.js",
         "shared/*.js"
       ],
       "matches": [
@@ -89,7 +91,8 @@
         "https://www.screener.in/*",
         "https://screener.in/*",
         "https://chartink.com/*",
-        "https://www.chartink.com/*"
+        "https://www.chartink.com/*",
+        "https://fish-rs-board.pages.dev/*"
       ]
     }
   ]

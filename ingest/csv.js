@@ -6,7 +6,7 @@ const HEADER = /^(symbol|ticker|name|scrip|code|exchange)$/i;
 function cleanTicker(raw) {
   return String(raw || "")
     .toUpperCase()
-    .replace(/[^A-Z0-9.&-]/g, "")
+    .replace(/[^A-Z0-9.&^=_-]/g, "")
     .slice(0, 24);
 }
 
@@ -18,7 +18,7 @@ function cellsFromCsv(text) {
     .filter(Boolean);
 }
 
-export function capAt150(count) {
+export function capAtStockCap(count) {
   const n = Number(count) || 0;
   if (n > STOCK_CAP) {
     return { ok: false, error: `That file has more than ${STOCK_CAP} symbols` };
@@ -38,7 +38,7 @@ export function parseCsvText(text) {
   let cells = cellsFromCsv(raw);
   if (cells.length && HEADER.test(cells[0]) && !PREFIX.test(cells[0])) cells = cells.slice(1);
 
-  const capped = capAt150(cells.length);
+  const capped = capAtStockCap(cells.length);
   if (!capped.ok) return { ok: false, error: capped.error, rows: [] };
 
   const rows = [];

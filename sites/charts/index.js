@@ -1,12 +1,4 @@
-import { notBuilt } from "../../shared/placeholder.js";
-import { phaseLive } from "../../config/phase.js";
-
-export function placeholderMessage() {
-  return notBuilt(3);
-}
-
 export function changeListing(exchange, ticker) {
-  if (!phaseLive(3)) return { error: placeholderMessage() };
   const ex = String(exchange || "").trim();
   const sym = String(ticker || "").trim();
   const full = ex ? `${ex}:${sym}` : sym;
@@ -18,10 +10,6 @@ export function changeListing(exchange, ticker) {
 
 export function askCurrentListing() {
   return new Promise((resolve) => {
-    if (!phaseLive(3)) {
-      resolve(null);
-      return;
-    }
     const on = (e) => {
       document.removeEventListener("fv_symbol_response", on);
       resolve(e.detail || null);

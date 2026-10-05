@@ -1,8 +1,7 @@
 import { tickerFromScreenerUrl } from "./url.js";
 import { watchTablePlus } from "../../shared/row-plus.js";
-import { placeholderMessage } from "./placeholder.js";
 
-export { tickerFromScreenerUrl, placeholderMessage };
+export { tickerFromScreenerUrl };
 
 export function currentScreenerListing() {
   const ticker = tickerFromScreenerUrl(location.href);

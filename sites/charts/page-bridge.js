@@ -80,33 +80,38 @@
   function waitForSymbol(chart, bare, exchange, timeoutMs) {
     return new Promise((resolve) => {
       let settled = false;
+      let bus = null;
+      let poller = null;
       const finish = (ok) => {
         if (settled) return;
         settled = true;
-        resolve(ok);
-      };
-      let bus = null;
-      const handler = (info) => {
-        if (!symbolMatches(info, bare, exchange)) return;
         try {
           if (bus && bus.unsubscribe) bus.unsubscribe(null, handler);
         } catch (err) {}
+        if (poller) clearInterval(poller);
+        resolve(ok);
+      };
+      const extMatches = () => {
+        try {
+          const ext = chart.symbolExt && chart.symbolExt();
+          return symbolMatches(ext, bare, exchange);
+        } catch (err) {
+          return false;
+        }
+      };
+      const handler = (info) => {
+        if (!symbolMatches(info, bare, exchange)) return;
         finish(true);
       };
       try {
         bus = chart.onSymbolChanged && chart.onSymbolChanged();
         if (bus && bus.subscribe) bus.subscribe(null, handler);
       } catch (err) {}
-      setTimeout(() => {
-        try {
-          const ext = chart.symbolExt && chart.symbolExt();
-          if (symbolMatches(ext, bare, exchange)) {
-            finish(true);
-            return;
-          }
-        } catch (err) {}
-        finish(false);
-      }, timeoutMs);
+      // Chart can settle after onSymbolChanged fires; poll until timeout.
+      poller = setInterval(() => {
+        if (extMatches()) finish(true);
+      }, 250);
+      setTimeout(() => finish(extMatches()), timeoutMs);
     });
   }
 
@@ -144,7 +149,7 @@
             return;
           }
         } catch (err) {}
-        const pending = waitForSymbol(chart, bare, exchange, 1200);
+        const pending = waitForSymbol(chart, bare, exchange, 4000);
         try {
           applySymbol(api, chart, exchange + ":" + bare);
         } catch (err) {

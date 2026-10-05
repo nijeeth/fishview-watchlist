@@ -1,6 +1,7 @@
 import {
   LIST_CAP,
   STOCK_CAP,
+  ALL_STOCKS_ID,
   FILTER_KEYS,
   HEADER_DOTS,
   LABEL_COLOR,
@@ -13,16 +14,10 @@ import {
   normalizeLabelOn,
   listsByName,
 } from "./book.js";
-import { phaseBanner, ACTIVE_PHASE } from "../config/phase.js";
+const BANNER = "WARNING: Delayed Price Data";
 import { selectBarHtml, canCreateList } from "./select-bar.js";
 import { otherLists } from "./bulk.js";
-
-function esc(s) {
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/"/g, "&quot;")
-    .replace(/</g, "&lt;");
-}
+import { esc } from "../shared/escape.js";
 
 function fmtPrice(n) {
   if (typeof n !== "number" || !Number.isFinite(n)) return "--";
@@ -43,19 +38,22 @@ function fmtMcap(n) {
   return `${Math.round(n)}`;
 }
 
-export function watchlistHtml(book, { cloudIcon, refreshIcon, cloudHint, cloudStatus, quoteHint, ingestHint, screenerHint, chartinkHint, chartHint, notice, noticeOk, noticeBusy, noticeCounts, selectedKey, currentReady, ingestReady, scanReady, quotesReady, quotesLoading, quotes, selecting, selectedKeys, selView, selConfirm, flashKeys, chartinkChartDark }) {
-  const list = activeList(book);
-  const rows = visibleStocks(book, quotes);
+export function watchlistHtml(book, { cloudIcon, refreshIcon, cloudStatus, notice, noticeOk, noticeBusy, noticeCounts, selectedKey, currentReady, scanReady, quotesLoading, quotes, selecting, selectedKeys, selView, selConfirm, flashKeys, chartinkChartDark, viewList, viewAll, allStocks }) {
+  const list = viewList || activeList(book);
+  const rows = visibleStocks(book, quotes, list);
   const on = normalizeLabelOn(book.labelOn);
   const counts = labelCounts(list);
   const allOn = allLabelsSelected(on);
   const listLabel = (l) => `${esc(l.name)} (${l.stocks.length})`;
-  const listOpts = listsByName(book.lists)
-    .map(
-      (l) =>
-        `<button type="button" class="fv-list-opt ${l.id === book.activeId ? "on" : ""}" data-list="${esc(l.id)}">${listLabel(l)}</button>`
-    )
-    .join("");
+  const allOpt = `<button type="button" class="fv-list-opt fv-list-all ${viewAll ? "on" : ""}" data-list="${ALL_STOCKS_ID}" title="All Unique Stock (${allStocks})">All Unique Stock (${allStocks})</button>`;
+  const listOpts =
+    allOpt +
+    listsByName(book.lists)
+      .map(
+        (l) =>
+          `<button type="button" class="fv-list-opt ${!viewAll && l.id === book.activeId ? "on" : ""}" data-list="${esc(l.id)}" title="${esc(l.name)} (${l.stocks.length})">${listLabel(l)}</button>`
+      )
+      .join("");
 
   const arrow = book.sortDir === "desc" ? "↓" : "↑";
   const mark = (key, title) => {
@@ -91,7 +89,9 @@ export function watchlistHtml(book, { cloudIcon, refreshIcon, cloudHint, cloudSt
         .join("")
     : list.stocks.length
       ? `<tr><td colspan="5" class="fv-empty fv-empty-filter">No stocks match these labels</td></tr>`
-      : `<tr><td colspan="5" class="fv-empty"><button type="button" class="fv-add-link" data-act="add-stocks">Add Stocks</button></td></tr>`;
+      : viewAll
+        ? `<tr><td colspan="5" class="fv-empty">All watchlists are empty</td></tr>`
+        : `<tr><td colspan="5" class="fv-empty"><button type="button" class="fv-add-link" data-act="add-stocks">Add Stocks</button></td></tr>`;
 
   const plusDisabled = book.lists.length >= LIST_CAP ? "disabled" : "";
   const plusTitle = book.lists.length >= LIST_CAP ? `Maximum ${LIST_CAP} lists` : "New list";
@@ -112,7 +112,7 @@ export function watchlistHtml(book, { cloudIcon, refreshIcon, cloudHint, cloudSt
 
   return `
       <div class="fv-head">
-        <p class="fv-phase${ACTIVE_PHASE === 6 ? " fv-phase-warn" : ""}">${phaseBanner(ACTIVE_PHASE)}</p>
+        <p class="fv-phase fv-phase-warn">${BANNER}</p>
         ${
           chartinkChartDark
             ? `<p class="fv-chartink-site">Chartink website issue: stock row text on this chart can be hard to read in their Dark theme. <button type="button" class="fv-chartink-day" id="fv-chartink-day">Use Chartink Day</button></p>`
@@ -135,34 +135,38 @@ export function watchlistHtml(book, { cloudIcon, refreshIcon, cloudHint, cloudSt
         }
         <div class="fv-row fv-list-row">
           <div class="fv-list-wrap" id="fv-list-wrap">
-            <button type="button" class="fv-list-pick" id="fv-list-pick">
+            <button type="button" class="fv-list-pick" id="fv-list-pick" title="${esc(list.name)} (${list.stocks.length})">
               <span class="fv-list-pick-name">${listLabel(list)}</span>
               <span class="fv-list-caret" aria-hidden="true"></span>
             </button>
             <div class="fv-list-drop" id="fv-list-drop" hidden>${listOpts}</div>
           </div>
           <button type="button" class="fv-btn fv-icon fv-pill fv-pill-add" id="fv-list-new" ${plusDisabled} title="${esc(plusTitle)}">+</button>
-          <button type="button" class="fv-btn fv-icon fv-pill fv-pill-file" id="fv-list-more" title="List menu">⋮</button>
-          <button type="button" class="fv-btn fv-icon fv-pill fv-pill-current" id="fv-quotes-go" ${quotesReady ? "" : "disabled"} title="${quotesReady ? "Refresh data for this list" : esc(quoteHint)}">${refreshIcon}</button>
+          <button type="button" class="fv-btn fv-icon fv-pill fv-pill-file" id="fv-list-more" ${viewAll ? "disabled" : ""} title="${viewAll ? "List actions need a named list" : "List menu"}">⋮</button>
+          <button type="button" class="fv-btn fv-icon fv-pill fv-pill-current" id="fv-quotes-go" title="Refresh data for this list">${refreshIcon}</button>
           <div class="fv-menu fv-list-menu" id="fv-list-menu" hidden>
             <button type="button" data-act="rename-list">Rename</button>
             <button type="button" data-act="delete-list">Delete list</button>
           </div>
         </div>
         <div class="fv-row fv-actions">
-          <button type="button" class="fv-btn fv-pill fv-pill-current" id="fv-current" ${currentReady ? "" : "disabled"} title="${currentReady ? "Add this page symbol to this list" : esc(chartHint)}">Current</button>
-          <button type="button" class="fv-btn fv-pill fv-pill-add" id="fv-add" ${ingestReady ? "" : "disabled"} title="${ingestReady ? "Paste up to 5 symbols" : esc(ingestHint)}">Add</button>
-          <button type="button" class="fv-btn fv-pill fv-pill-scan" id="fv-scan" ${scanReady ? "" : "disabled"} title="${scanReady ? "Scan this page into a new list" : "Scan works on Screener and Chartink"}">Scan</button>
+          <button type="button" class="fv-btn fv-pill fv-pill-current" id="fv-current" ${currentReady && !viewAll ? "" : "disabled"} title="${viewAll ? "Pick a named list to add" : "Add this page symbol to this list"}">Current</button>
+          <button type="button" class="fv-btn fv-pill fv-pill-add" id="fv-add" ${viewAll ? "disabled" : ""} title="${viewAll ? "Pick a named list to add" : "Paste up to 5 symbols"}">Add</button>
+          <button type="button" class="fv-btn fv-pill fv-pill-scan" id="fv-scan" ${scanReady ? "" : "disabled"} title="Scan the results table">Scan</button>
           <div class="fv-menu-wrap">
-            <button type="button" class="fv-btn fv-pill fv-pill-file" id="fv-xfer" title="${ingestReady ? "Import or export CSV" : esc(ingestHint)}">File ▾</button>
+            <button type="button" class="fv-btn fv-pill fv-pill-file" id="fv-xfer" title="Import or export CSV">File</button>
             <div class="fv-menu" id="fv-xfer-menu" hidden>
-              <button type="button" data-act="import-file" ${ingestReady ? "" : "disabled"}>Import</button>
-              <button type="button" data-act="export-file" ${ingestReady ? "" : "disabled"}>Export</button>
+              <button type="button" data-act="import-file">Import</button>
+              <button type="button" data-act="export-file">Export</button>
             </div>
           </div>
         </div>
         <p class="fv-hint fv-meta">
-          <span class="fv-meta-counts">${list.stocks.length} / ${STOCK_CAP} stocks · ${book.lists.length} / ${LIST_CAP} lists</span>
+          <span class="fv-meta-counts">${
+            viewAll
+              ? `${list.stocks.length} stocks · ${book.lists.length} / ${LIST_CAP} lists`
+              : `${list.stocks.length} / ${STOCK_CAP} stocks · ${book.lists.length} / ${LIST_CAP} lists`
+          }</span>
           <span class="fv-meta-filter">Filter Applied:
           ${
             allOn

@@ -1,8 +1,7 @@
 import { tickerFromChartinkUrl, isChartinkChartPage } from "./url.js";
 import { watchTablePlus } from "../../shared/row-plus.js";
-import { placeholderMessage } from "./placeholder.js";
 
-export { tickerFromChartinkUrl, isChartinkChartPage, placeholderMessage };
+export { tickerFromChartinkUrl, isChartinkChartPage };
 
 /** Chartink's own Dark class on <html>, not FishView Night. */
 export function chartinkSiteIsDark() {

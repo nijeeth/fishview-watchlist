@@ -24,6 +24,7 @@ export const SITE_PANEL = {
   tradingview: "fvPanelOnTradingView",
   screener: "fvPanelOnScreener",
   chartink: "fvPanelOnChartink",
+  fishrs: "fvPanelOnFishRs",
 };
 
 const DEFAULTS = {
@@ -37,6 +38,7 @@ const DEFAULTS = {
   [SITE_PANEL.tradingview]: true,
   [SITE_PANEL.screener]: true,
   [SITE_PANEL.chartink]: true,
+  [SITE_PANEL.fishrs]: true,
 };
 
 export async function get(key) {

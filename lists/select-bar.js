@@ -1,11 +1,5 @@
 import { LIST_CAP, LABEL_COLOR, LABELS, labelTitle } from "./book.js";
-
-function esc(s) {
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/"/g, "&quot;")
-    .replace(/</g, "&lt;");
-}
+import { esc } from "../shared/escape.js";
 
 function selTopHtml(count, backAct) {
   return `<div class="fv-sel-top">
@@ -14,7 +8,7 @@ function selTopHtml(count, backAct) {
   </div>`;
 }
 
-export function selectBarHtml({ n, view, confirm, destLists, canCreate }) {
+export function selectBarHtml({ n, view, confirm }) {
   const count = `${n} selected`;
   if (view === "confirm" && confirm) {
     const danger = confirm.kind === "delete";
@@ -46,22 +40,6 @@ export function selectBarHtml({ n, view, confirm, destLists, canCreate }) {
       </div>
     </div>`;
   }
-  if (view === "dest") {
-    const rows = (destLists || []).length
-      ? destLists
-          .map(
-            (l) =>
-              `<button type="button" class="fv-sel-dd-item" data-sel="pick-dest" data-to="${esc(l.id)}">${esc(l.name)} (${l.stocks.length})</button>`
-          )
-          .join("")
-      : `<p class="fv-sel-empty">No other lists yet</p>`;
-    return `<div class="fv-sel-bar" id="fv-sel-bar">
-      ${selTopHtml(count, "actions")}
-      <div class="fv-sel-stack">${rows}
-        ${canCreate ? `<button type="button" class="fv-sel-dd-item" data-sel="new-dest">+ New list</button>` : ""}
-      </div>
-    </div>`;
-  }
   const disabled = n ? "" : "disabled";
   return `<div class="fv-sel-bar" id="fv-sel-bar">
     ${selTopHtml(count, "exit")}
@@ -71,7 +49,6 @@ export function selectBarHtml({ n, view, confirm, destLists, canCreate }) {
       <button type="button" class="fv-btn fv-pill fv-pill-file" data-sel="copy" ${disabled}>Copy</button>
       <button type="button" class="fv-btn fv-pill fv-pill-scan" data-sel="delete" ${disabled}>Delete</button>
     </div>
-    <button type="button" class="fv-sel-cancel" data-sel="exit">Cancel</button>
   </div>`;
 }
 

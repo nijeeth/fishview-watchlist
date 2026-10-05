@@ -27,7 +27,8 @@
       if (
         changes.fvPanelOnTradingView ||
         changes.fvPanelOnScreener ||
-        changes.fvPanelOnChartink
+        changes.fvPanelOnChartink ||
+        changes.fvPanelOnFishRs
       ) {
         sync();
       }

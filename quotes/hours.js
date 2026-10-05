@@ -53,7 +53,8 @@ export function isQuoteStale(exchange, fetchedAt, liveTtlMs = 60000) {
 export function anyExchangeOpen(exchanges) {
   const set = [...new Set((exchanges || []).map((e) => String(e || "").toUpperCase()).filter(Boolean))];
   if (!set.length) return false;
-  return set.some((ex) => isOpen(ex));
+  // No session data -> do not live-poll. A refresh or remount warms hours first.
+  return set.some((ex) => periods.has(ex) && isOpen(ex));
 }
 
 export function bellwethersFor(exchange) {

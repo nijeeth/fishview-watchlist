@@ -12,11 +12,12 @@ export function hostKind(hostname = location.hostname) {
   if (h.includes("tradingview.com")) return "tv";
   if (h.includes("screener.in")) return "screener";
   if (h.includes("chartink.com")) return "chartink";
+  if (h.includes("fish-rs-board")) return "fishrs";
   return "other";
 }
 
 export function isCompactHost(kind = hostKind()) {
-  return kind === "screener" || kind === "chartink";
+  return kind === "screener" || kind === "chartink" || kind === "fishrs";
 }
 
 export function dockMinW(kind = hostKind()) {

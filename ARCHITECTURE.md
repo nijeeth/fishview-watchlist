@@ -1,10 +1,10 @@
 # FishView Watchlist — Architecture
 
-Keep this file, `PHASES.md`, `WHATSNEW.md`, `CHANGELOG.md`, and `README.md` in step with **v1.0.0**.
+Keep this file, `PHASES.md`, `WHATSNEW.md`, `CHANGELOG.md`, and `README.md` in step with **v2.0.0**.
 
 **Type:** Chrome MV3 content-script dock  
-**Version:** **1.0.0** (`manifest.json`)  
-**Watchlist caution banner:** `config/phase.js` (Yahoo not-realtime line; not a product-phase gate)  
+**Version:** **2.0.0** (`manifest.json`)  
+**Watchlist caution banner:** `BANNER` constant in `lists/render.js` and `shell/mount.js` (Yahoo delayed-data warning)  
 **Cloud:** live (`cloud/`, `https://*.supabase.co/*`). Cloud Backup control is hidden.  
 **Chrome:** `minimum_chrome_version` **111**  
 **Privacy:** https://sites.google.com/view/fishviewwatchlist-privacy  
@@ -18,10 +18,10 @@ Keep this file, `PHASES.md`, `WHATSNEW.md`, `CHANGELOG.md`, and `README.md` in s
 
 Right-side watchlist dock on TradingView, Screener.in, and Chartink. The page is **pushed** (`width` + `margin-right`); the dock does not cover the chart.
 
-- **Watchlist:** up to **50 lists × 150 stocks**, labels, sort, filter, bulk select, local JSON backup/restore, TV chart switch.
+- **Watchlist:** up to **50 lists × 200 stocks**, labels, sort, filter, bulk select, local JSON backup/restore, TV chart switch.
 - **Cloud:** optional **user-owned** Supabase. Password is typed only and never stored. Cloud Backup control is hidden; Connect already syncs.
 - **Quotes:** Yahoo CMP / % / Mcap for the **open list only**, every **60s**. Not realtime. Not stored.
-- **Ingest:** paste Add (max 5, comma-separated), CSV import/export (NSE/BSE prefixes; 151+ reject all).
+- **Ingest:** paste Add (max 5, comma-separated), CSV import/export (NSE/BSE prefixes; 201+ reject all).
 - **Sites:** Scan, per-row **+**, Current from Screener/Chartink company or stock URLs.
 
 Puzzle-icon **popup** turns the dock on/off per site (no tab reload required).
@@ -34,7 +34,6 @@ Each domain has its own `index.js`. The dock (`shell`) calls those entries.
 
 | Folder | Owns |
 |---|---|
-| `config/` | Watchlist caution banner |
 | `persist/` | `chrome.storage.local` keys |
 | `lists/` | `listBook` CRUD, labels, sort, filter, caps, bulk, local backup JSON |
 | `ingest/` | Paste, CSV, export, bulk log |
@@ -44,6 +43,7 @@ Each domain has its own `index.js`. The dock (`shell`) calls those entries.
 | `sites/charts/` | TV `fv_*` + MAIN `page-bridge.js` |
 | `sites/screener/` | Scan, row +, company URL |
 | `sites/chartink/` | Scan, row +, stock URL |
+| `sites/fishrs/` | Scan, row + |
 | `cloud/` | Supabase auth, `fv_list_book` read/write, 2s push, pull on return, local `fvDiagLog` |
 | `shared/` | Key isolation |
 | `background/` | Help page, Yahoo crumb/JSON, Fyers dump, `FV_CLOUD_HTTP` |
@@ -80,12 +80,12 @@ Page (TV / Screener / Chartink)
 | Rule | Value |
 |---|---|
 | Lists | Max **50** |
-| Stocks per list | Max **150** |
+| Stocks per list | Max **200** |
 | Batch select | Max **30** |
 | Row identity | `exchange` + `ticker` |
 | List names | Letters, numbers, space, hyphen; unique |
 | Paste Add | Max **5** tokens; commas; active list |
-| CSV / Scan | **> 150** → reject all |
+| CSV / Scan | **> 200** → reject all |
 | Bare paste | NSE then BSE |
 | CSV prefixes | `NSE:` / `BSE:` only (US via Add/Current) |
 | TV Current | `pro_name` (`NASDAQ:` / `NYSE:`). Chart feed may show Cboe One / `BATS:`; those are not stored. |
@@ -131,10 +131,10 @@ Do not copy names or pipelines from other watchlist products. Chart-switch and N
 - List picker (A–Z, 8-row drop, theme fill, `#089981` border).
 - `+` new list, `⋮` rename/delete, quotes refresh (`#fv-quotes-go`).
 - Current, Add, Scan, File (CSV this list). Local **Backup Local** / **Restore Backup** (all lists + labels).
-- Banner: `Careful: Not realtime. Prices from Yahoo every 60s` (`phaseBanner`; max two lines; no “Phase 6” prefix).
+- Banner: `WARNING: Delayed Price Data` (BANNER constant).
 - Cloud line: cloud icon + short words (**Not configured** / **Not connected** / **Database not ready** / **Link Established** / **Connected** / **Connecting…** / **Network issue**) plus **[cloud] Sync** (manual pull). Cloud tab heading keeps the full **Cloud …** phrases.
 - Known issue: **Chartink website issue** on the chart window only (their Dark theme). Dock offers **Use Chartink Day** on that screen.
-- Table: Label | Name | Price | %Change | Mktcap. **Filter Applied** colour dots stay 10px (column-header dots still shrink). Long-press 500ms → batch (overlay checks on label column; header = select all). Confirm all bulk actions. Label 4 colours + unlabel; dest unlabeled. 150 add-what-fits; 30 batch cap.
+- Table: Label | Name | Price | %Change | Mktcap. **Filter Applied** colour dots stay 10px (column-header dots still shrink). Long-press 500ms → batch (overlay checks on label column; header = select all). Confirm all bulk actions. Label 4 colours + unlabel; dest unlabeled. 200 add-what-fits; 30 batch cap.
 - Row click: select + TV `changeListing`. Right-click: colours, move/copy, delete. Menu measures itself and flips up/left so it stays inside `#fv-panel`.
 
 **Cloud tab** (labels match the Help page)
@@ -182,7 +182,7 @@ Probe the table only marks **Database not ready** on PostgREST missing-table err
 | `fvTheme` | `dark` / `light` |
 | `fvPanelWidthTv` / `fvPanelWidthWeb` | Last drag |
 | `fvDockMinimizedTv` / `fvDockMinimizedWeb` | Mini bar |
-| `fvPanelOnTradingView` / `Screener` / `Chartink` | Popup gates |
+| `fvPanelOnTradingView` / `Screener` / `Chartink` / `FishRs` | Popup gates |
 | `fvCloudUrl`, `fvCloudPublishableKey`, `fvCloudEmail`, `fvCloudSession`, `fvCloudBookAt` | Cloud, no password |
 | `fvDiagLog` | Local cloud event log (**Log** download). No lists or tokens |
 | `fvBoardBookV6` | EQ dump cache |
@@ -236,7 +236,6 @@ Entry = each folder's `index.js` unless noted.
 | Folder | Known files | Called by | Talks to |
 |---|---|---|---|
 | `shell/` | `boot.js`, `mount.js`, `page.css`, `site-gate.js`, `page-layout.js`, `tv-layout.js`, `theme.js` | Manifest `content_scripts` | `lists`, `ingest`, `quotes`, `cloud`, `sites/*`, `persist` |
-| `config/` | `phase.js` (`ACTIVE_PHASE`, `phaseBanner`) | `shell` | — |
 | `persist/` | `index.js` | All domains | `chrome.storage.local` |
 | `lists/` | `book.js`, `backup.js`, `bulk.js`, `render.js` | `shell`, `ingest`, `cloud` | `persist` |
 | `ingest/` | `index.js`, `csv.js`, `split.js`, `log.js` | `shell` | `lists`, `listings` |
@@ -245,6 +244,7 @@ Entry = each folder's `index.js` unless noted.
 | `sites/charts/` | `index.js`, `page-bridge.js` (MAIN) | `shell` | Page via `fv_*` events |
 | `sites/screener/` | `index.js`, `url.js` | `shell` | Page DOM / URL |
 | `sites/chartink/` | `index.js`, `url.js` | `shell` | Page DOM / URL |
+| `sites/fishrs/` | `index.js` | `shell` | Page DOM |
 | `cloud/` | `index.js`, `sql.js` | `shell` | Background `FV_CLOUD_HTTP`, `lists`, `persist` |
 | `shared/` | `isolate-keys.js`, `yahoo-http.js` | `shell`, `quotes` | — |
 | `background/` | `index.js` (module worker) | Messages from content scripts | Yahoo, Fyers, `*.supabase.co`, help tab |
@@ -333,7 +333,7 @@ All in `chrome.storage.local`. Add new keys to `persist/` and to this table.
 | `fvTheme` | `'dark'` \| `'light'` (Night / Day). Default `dark`. | `shell` | — |
 | `fvPanelWidthTv`, `fvPanelWidthWeb` | px number (clamped §6) | `shell` resize | — |
 | `fvDockMinimizedTv`, `fvDockMinimizedWeb` | boolean. Default `false`. | `shell` | — |
-| `fvPanelOnTradingView`, `fvPanelOnScreener`, `fvPanelOnChartink` | boolean. Default `true`. | `popup` | — |
+| `fvPanelOnTradingView`, `fvPanelOnScreener`, `fvPanelOnChartink`, `fvPanelOnFishRs` | boolean. Default `true`. | `popup` | — |
 | `fvCloudUrl`, `fvCloudPublishableKey`, `fvCloudEmail` | string | `cloud` (Connect) | Delete Cloud Details |
 | `fvCloudSession` | Auth JSON from `/auth/v1/token` (includes `access_token`; FishView may set `dbReady`) | `cloud` | Disconnect (session + `fvCloudBookAt` only), Delete Cloud Details (URL, key, email, session, bookAt) |
 | `fvCloudBookAt` | remote `updated_at` string | `cloud` | Disconnect, Delete Cloud Details |
@@ -366,7 +366,7 @@ Changing `listBook` shape: update `normalizeBook`, keep old books loading (local
 2. **Folder:** `sites/<site>/index.js`: Scan, row **+**, Current. No imports from other site folders.
 3. **Gate:** new `fvPanelOn<Site>` key in `persist/`, toggle in `popup/`, host in `shell/site-gate.js`.
 4. **Dock:** compact CSS in `shell/web-dock-css.js` / `mount.js`. Width/minimize: reuse `fvPanelWidthWeb` / `fvDockMinimizedWeb` unless it needs its own.
-5. **Caps:** Scan **> 150** → reject all. Rows unlabeled. NSE then BSE.
+5. **Caps:** Scan **> 200** → reject all. Rows unlabeled. NSE then BSE.
 6. **Docs:** update §1, §2, §10/§18, §11, README (supported sites, permissions, CWS justification), `PHASES.md`.
 
 ---
@@ -378,11 +378,11 @@ No automated suite. Manual, per release:
 | Area | Check |
 |---|---|
 | Dock | Mounts on www/in/es TradingView, Screener, Chartink; page pushed; clamps; × / header click minimize; popup gate hides without a full reload |
-| Lists | 51st list refused; bad / duplicate name refused; 151st stock refused |
+| Lists | 51st list refused; bad / duplicate name refused; 201st stock refused |
 | Labels | Label sort unlabeled last both ways; last filter tick stays; none → all on |
 | Bulk | 500ms long-press; 31st refused; copy/move add-what-fits, unlabeled |
-| Ingest | Add 5 max, commas only; CSV 151 reject all; bare `RELIANCE` → NSE |
-| Sites | Scan > 150 reject; Scan current vs new list; row +; Current from URL |
+| Ingest | Add 5 max, commas only; CSV 201 reject all; bare `RELIANCE` → NSE |
+| Sites | Scan > 200 reject; Scan current vs new list; row +; Current from URL |
 | Charts | Row click no reload; US Current → `NASDAQ:` / `NYSE:` |
 | Quotes | Open list only; no poll when closed; Refresh retries (PHASES §6) |
 | Backup | Round trip; restore overwrites |
@@ -408,20 +408,20 @@ No automated suite. Manual, per release:
 | Term | Meaning |
 |---|---|
 | Dock | FishView panel in `#fv-root` (shadow DOM) |
-| Web | Screener + Chartink (shared width / minimize keys) |
+| Web | Screener + Chartink + Fish RS Board (shared width / minimize keys) |
 | `listBook` | All lists + UI list state (`fvListBook`) |
 | `boardBook` | NSE/BSE EQ symbol list (seed + Fyers) |
 | `quoteDesk` | Yahoo quotes module |
 | `pro_name` | TV's listing symbol (`NASDAQ:AAPL`) vs displayed feed (`BATS:`) |
-| Caution banner | `PHASES.md` / `phase.js` — Watchlist Yahoo line only |
+| Caution banner | `BANNER` constant — delayed-data warning only |
 | LWW | Last-write-wins (cloud) |
 | Chart Funda | Separate extension (`tvf_*`). FishView must coexist |
 | Fyers | Public symbol dump only. No broker account |
 
 ---
 
-## 23. v1.0.0
+## 23. v2.0.0
 
-**v1.0.0** is the current release. Known issue: **Chartink website issue** on their chart window in Dark theme (stock row text). FishView offers **Use Chartink Day** on that screen only.
+**v2.0.0** is the current release (in development). Known issue: **Chartink website issue** on their chart window in Dark theme (stock row text). FishView offers **Use Chartink Day** on that screen only.
 
 **At publish:** dashboard screenshots (you will add them). Privacy URL and support email are set. Cloud Backup stays hidden.

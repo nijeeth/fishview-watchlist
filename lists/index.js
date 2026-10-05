@@ -1,8 +1,8 @@
-import { notBuilt } from "../shared/placeholder.js";
-
 export {
   LIST_CAP,
   STOCK_CAP,
+  NAME_MAX,
+  ALL_STOCKS_ID,
   BATCH_CAP,
   LABELS,
   LABEL_COLOR,
@@ -17,6 +17,8 @@ export {
   loadBook,
   saveBook,
   activeList,
+  allUniqueList,
+  allUniqueStocks,
   visibleStocks,
   setActive,
   createList,
@@ -26,7 +28,10 @@ export {
   addStocks,
   createListWithStocks,
   removeStock,
+  removeStockEverywhere,
   setLabel,
+  setLabelEverywhere,
+  moveStockEverywhere,
   nextLabel,
   moveStock,
   copyStock,
@@ -38,12 +43,9 @@ export {
   restoreAllLabels,
   setSort,
   cleanListName,
+  nameTaken,
 } from "./book.js";
 
 export { backupJson, backupFileName, parseBackupText, restoreBackupBook } from "./backup.js";
 
 export { setLabelsOn, removeStocks, copyStocks, moveStocks, createDestList, otherLists } from "./bulk.js";
-
-export function placeholderMessage() {
-  return notBuilt(2);
-}

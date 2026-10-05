@@ -19,15 +19,36 @@ function startModule(label, fn) {
   }
 }
 
-async function fetchYahooJson(url) {
+const YAHOO_PATHS = [
+  "/v7/finance/quote",
+  "/v8/finance/chart/",
+  "/v10/finance/quoteSummary/",
+  "/v1/test/getcrumb",
+];
+
+// Cross-tab quote reuse: identical URLs share a short-lived in-memory
+// response and de-duplicate in-flight fetches (SW memory only, not storage).
+const YQ_TTL_MS = 45 * 1000;
+const yqCache = new Map();
+const yqInflight = new Map();
+
+async function fetchYahooJsonNow(url) {
   const href = String(url || "");
-  if (!href.startsWith("https://query1.finance.yahoo.com/") && !href.startsWith("https://query2.finance.yahoo.com/")) {
+  let path = "";
+  try {
+    const x = new URL(href);
+    if (x.hostname !== "query1.finance.yahoo.com" && x.hostname !== "query2.finance.yahoo.com") {
+      return { ok: false, status: 0 };
+    }
+    path = x.pathname;
+  } catch (_) {
     return { ok: false, status: 0 };
   }
+  if (!YAHOO_PATHS.some((pre) => path.startsWith(pre))) return { ok: false, status: 0 };
   try {
     let crumb = await ensureYahooCrumb(false);
     let res = await fetch(withYahooCrumb(href, crumb), { credentials: "include", cache: "no-store" });
-    if (res.status === 401) {
+    if (res.status === 401 || res.status === 403 || res.status === 429) {
       crumb = await ensureYahooCrumb(true);
       res = await fetch(withYahooCrumb(href, crumb), { credentials: "include", cache: "no-store" });
     }
@@ -40,8 +61,27 @@ async function fetchYahooJson(url) {
   }
 }
 
+async function fetchYahooJson(url) {
+  const href = String(url || "");
+  if (href.includes("/v1/test/getcrumb")) return fetchYahooJsonNow(href);
+  const hit = yqCache.get(href);
+  if (hit && Date.now() - hit.ts < YQ_TTL_MS) return hit.payload;
+  if (yqInflight.has(href)) return yqInflight.get(href);
+  const job = fetchYahooJsonNow(href)
+    .then((out) => {
+      if (out.ok) yqCache.set(href, { ts: Date.now(), payload: out });
+      return out;
+    })
+    .finally(() => yqInflight.delete(href));
+  yqInflight.set(href, job);
+  return job;
+}
+
 let yahooCrumb = "";
 let yahooCrumbAt = 0;
+let crumbJob = null;
+const CRUMB_KEY = "fvYahooCrumb";
+const CRUMB_TTL_MS = 45 * 60 * 1000;
 
 function withYahooCrumb(href, crumb) {
   if (!crumb || href.includes("/v1/test/getcrumb")) return href;
@@ -49,8 +89,7 @@ function withYahooCrumb(href, crumb) {
   return `${href}${href.includes("?") ? "&" : "?"}crumb=${encodeURIComponent(crumb)}`;
 }
 
-async function ensureYahooCrumb(force) {
-  if (!force && yahooCrumb && Date.now() - yahooCrumbAt < 45 * 60 * 1000) return yahooCrumb;
+async function fetchCrumbNow() {
   try {
     await fetch("https://fc.yahoo.com/", { credentials: "include", cache: "no-store", redirect: "follow" });
   } catch (_) {}
@@ -68,9 +107,31 @@ async function ensureYahooCrumb(force) {
     if (res.ok && text && text.length < 40 && !text.startsWith("<") && !text.startsWith("{")) {
       yahooCrumb = text;
       yahooCrumbAt = Date.now();
+      try {
+        await chrome.storage.session.set({ [CRUMB_KEY]: { c: yahooCrumb, t: yahooCrumbAt } });
+      } catch (_) {}
     }
   } catch (_) {}
   return yahooCrumb;
+}
+
+async function ensureYahooCrumb(force) {
+  if (!force && yahooCrumb && Date.now() - yahooCrumbAt < CRUMB_TTL_MS) return yahooCrumb;
+  if (!force) {
+    try {
+      const kept = (await chrome.storage.session.get(CRUMB_KEY))?.[CRUMB_KEY];
+      if (kept?.c && Date.now() - kept.t < CRUMB_TTL_MS) {
+        yahooCrumb = kept.c;
+        yahooCrumbAt = kept.t;
+        return yahooCrumb;
+      }
+    } catch (_) {}
+  }
+  if (crumbJob) return crumbJob;
+  crumbJob = fetchCrumbNow().finally(() => {
+    crumbJob = null;
+  });
+  return crumbJob;
 }
 
 function openSupabase(raw) {
@@ -98,11 +159,21 @@ function isSupabaseHref(href) {
   }
 }
 
+const CLOUD_PATHS = [`/auth/v1/token`, `/auth/v1/logout`, `/rest/v1/fv_list_book`];
+
 async function fetchCloudHttp(msg) {
   const href = String(msg.url || "");
   if (!isSupabaseHref(href)) return { ok: false, status: 0, error: "Not a Supabase URL" };
+  try {
+    const x = new URL(href);
+    if (!CLOUD_PATHS.some((pre) => x.pathname.startsWith(pre))) {
+      return { ok: false, status: 0, error: "Not a FishView cloud path" };
+    }
+  } catch (_) {
+    return { ok: false, status: 0, error: "Bad URL" };
+  }
   const method = String(msg.method || "GET").toUpperCase();
-  if (!["GET", "POST", "PATCH", "PUT", "DELETE"].includes(method)) {
+  if (!["GET", "POST"].includes(method)) {
     return { ok: false, status: 0, error: "Bad method" };
   }
   try {
@@ -230,23 +301,30 @@ async function bootDump(isInstall) {
   }
 }
 
-function tvChartUrl(exchange, ticker) {
+const TV_HOSTS = ["in.tradingview.com", "www.tradingview.com", "es.tradingview.com"];
+
+function tvChartUrl(exchange, ticker, host) {
   const ex = String(exchange || "NSE").toUpperCase();
   const t = String(ticker || "").toUpperCase();
-  return `https://in.tradingview.com/chart/?symbol=${encodeURIComponent(`${ex}:${t}`)}`;
+  const h = TV_HOSTS.includes(String(host || "")) ? host : "in.tradingview.com";
+  return `https://${h}/chart/?symbol=${encodeURIComponent(`${ex}:${t}`)}`;
 }
 
 async function openOrFocusTv(exchange, ticker) {
-  const chartUrl = tvChartUrl(exchange, ticker);
   const tabs = await chrome.tabs.query({
-    url: ["*://in.tradingview.com/*", "*://www.tradingview.com/*"],
+    url: TV_HOSTS.map((h) => `*://${h}/*`),
   });
   const live = (tabs || []).filter((t) => t.id).sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0));
   const tab = live[0];
   if (!tab) {
-    await chrome.tabs.create({ url: chartUrl });
+    await chrome.tabs.create({ url: tvChartUrl(exchange, ticker) });
     return;
   }
+  let tabHost = "";
+  try {
+    tabHost = new URL(String(tab.url || "")).hostname;
+  } catch (_) {}
+  const chartUrl = tvChartUrl(exchange, ticker, tabHost);
   await chrome.tabs.update(tab.id, { active: true });
   try {
     if (tab.windowId) await chrome.windows.update(tab.windowId, { focused: true });
@@ -282,6 +360,7 @@ startModule("worker", () => {
   });
 
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+    if (!_sender || _sender.id !== chrome.runtime.id) return;
     if (msg && msg.type === "OPEN_CLOUD_HELP") {
       openCloudHelp();
       return;

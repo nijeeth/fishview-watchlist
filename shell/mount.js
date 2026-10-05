@@ -1,4 +1,4 @@
-import { ACTIVE_PHASE, phaseBanner, phaseLive } from "../config/phase.js";
+const BANNER = "WARNING: Delayed Price Data";
 import {
   loadBook,
   activeList,
@@ -9,7 +9,12 @@ import {
   createList,
   STOCK_CAP,
   LIST_CAP,
+  NAME_MAX,
   BATCH_CAP,
+  ALL_STOCKS_ID,
+  allUniqueList,
+  allUniqueStocks,
+  removeStockEverywhere,
   createListWithStocks,
   renameList,
   deleteList,
@@ -18,6 +23,7 @@ import {
   setSort,
   normalizeBook,
   cleanListName,
+  nameTaken,
   canonicalExchange,
   labelTitle,
   setLabelsOn,
@@ -25,6 +31,7 @@ import {
   copyStocks,
   moveStocks,
   createDestList,
+  otherLists,
   backupJson,
   backupFileName,
   parseBackupText,
@@ -39,18 +46,22 @@ import {
   collectScreenerTickers,
   currentScreenerListing,
   startScreenerPlus,
-  placeholderMessage as screenerHint,
 } from "../sites/screener/index.js";
 import {
-  collectChartinkTickers,
+  isChartinkChartPage,
   currentChartinkListing,
+  collectChartinkTickers,
   startChartinkPlus,
   chartinkChartDarkOffer,
   applyChartinkDayTheme,
   watchChartinkChartDark,
-  placeholderMessage as chartinkHint,
 } from "../sites/chartink/index.js";
+import {
+  collectFishRsTickers,
+  startFishRsPlus,
+} from "../sites/fishrs/index.js";
 import { isolateKeys, isolateElement } from "../shared/isolate-keys.js";
+import { esc } from "../shared/escape.js";
 import {
   splitPasteTokens,
   resolvePasteToken,
@@ -58,11 +69,9 @@ import {
   formatCsv,
   formatBulkLog,
   downloadText,
-  placeholderMessage as ingestHint,
 } from "../ingest/index.js";
-import { placeholderMessage as quoteHint, quotesForOpenListOnly, quotesNeedLivePoll } from "../quotes/index.js";
-import { placeholderMessage as cloudHint, cloudStatus, onCloudSync, connectCloud, disconnectCloud, deleteCloudDetails, copySetupSql, copyDiagReport, diagLogState, diagLogFileName, noteDiag, scheduleCloudPush, pullCloudBook, resolveCloudOnConnect } from "../cloud/index.js";
-import { placeholderMessage as chartHint } from "../sites/charts/index.js";
+import { quotesForOpenListOnly, quotesNeedLivePoll } from "../quotes/index.js";
+import { cloudStatus, onCloudSync, connectCloud, disconnectCloud, deleteCloudDetails, copySetupSql, copyDiagReport, diagLogState, diagLogFileName, noteDiag, scheduleCloudPush, cancelPendingCloudPush, pullCloudBook, resolveCloudOnConnect } from "../cloud/index.js";
 import {
   get,
   set,
@@ -144,6 +153,7 @@ export async function mountPanel() {
   let quotesBusy = false;
   let quotesLoading = false;
   let noticeTimer = null;
+  let onStorageChange = null;
   let drag = false;
   let startX = 0;
   let startW = panelW;
@@ -153,7 +163,7 @@ export async function mountPanel() {
   host.style.cssText =
     `all:initial;position:fixed;top:0;right:0;z-index:2147483646;box-sizing:border-box;overflow:hidden;font-size:${compact ? 11 : 14}px;line-height:1.3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;`;
 
-  const shadow = host.attachShadow({ mode: "open" });
+  const shadow = host.attachShadow({ mode: "closed" });
   const css = document.createElement("style");
   css.textContent = DOCK_CSS + LIST_UI_CSS + (compact ? WEB_DOCK_CSS : "");
   shadow.appendChild(css);
@@ -180,7 +190,7 @@ export async function mountPanel() {
           <button type="button" class="fv-theme" id="fv-theme-btn" title="Switch theme"></button>
         </div>
         <div id="fv-body"><p class="fv-loading">Loading...</p></div>
-        <p class="fv-credit"><span>FishView Watchlist</span><span class="fv-credit-sep">|</span><span>NijeethFish</span></p>
+        <p class="fv-credit"><span>Nijeeth</span><span class="fv-credit-accent">Fish</span></p>
       </div>
     </div>
   `;
@@ -203,7 +213,7 @@ export async function mountPanel() {
     return String(n.getAttribute("data-tip") || n.getAttribute("title") || "").trim();
   }
   shell.addEventListener("pointermove", (e) => {
-    if (shell.querySelector(".fv-menu:not([hidden]), .fv-ctx, #fv-list-drop:not([hidden])")) {
+    if (shell.querySelector(".fv-menu:not([hidden]), .fv-ctx")) {
       hideTip();
       return;
     }
@@ -261,6 +271,8 @@ export async function mountPanel() {
   const handle = $("#fv-resize", shell);
 
   let book = await loadBook();
+  let viewAll = true;
+  const curList = () => (viewAll ? allUniqueList(book) : activeList(book));
   let notice = "";
   let noticeOk = false;
   let noticeBusy = false;
@@ -370,14 +382,14 @@ export async function mountPanel() {
   }
 
   function pruneSelected() {
-    const have = new Set(activeList(book).stocks.map((s) => `${s.exchange}:${s.ticker}`));
+    const have = new Set(curList().stocks.map((s) => `${s.exchange}:${s.ticker}`));
     for (const k of [...selected]) {
       if (!have.has(k)) selected.delete(k);
     }
   }
 
   function visibleRowKeys() {
-    return visibleStocks(book, quotesMap).map((s) => `${s.exchange}:${s.ticker}`);
+    return visibleStocks(book, quotesMap, curList()).map((s) => `${s.exchange}:${s.ticker}`);
   }
 
   function enterSelect(key) {
@@ -433,6 +445,11 @@ export async function mountPanel() {
       modal.querySelector("[data-k='no']")?.click();
       return;
     }
+    if (shell.querySelector(".fv-ctx, .fv-menu:not([hidden])")) {
+      e.preventDefault();
+      hidePopovers();
+      return;
+    }
     if (selectMode) {
       e.preventDefault();
       if (selView === "confirm") {
@@ -441,7 +458,7 @@ export async function mountPanel() {
         paint();
         return;
       }
-      if (selView === "label" || selView === "dest") {
+      if (selView === "label") {
         selView = "actions";
         paint();
         return;
@@ -456,10 +473,60 @@ export async function mountPanel() {
   document.addEventListener("pointerdown", onDocPointer, true);
   document.addEventListener("keydown", onDocKey, true);
 
+  // Up/Down walks our visible list and switches the TV chart, instead of
+  // TradingView's own watchlist. Never while typing in a page or dock field.
+  function onArrowNav(e) {
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+    if (tab !== "watchlist" || minimized || selectMode) return;
+    const t = e.target;
+    if (t && t.closest && t.closest("input, textarea, select, [contenteditable]")) return;
+    const ae = shadow.activeElement;
+    if (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) return;
+    if (panel.querySelector(".fv-modal")) return;
+    const keys = visibleRowKeys();
+    if (!keys.length) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const idx = keys.indexOf(selectedKey);
+    const next =
+      e.key === "ArrowDown"
+        ? idx < 0
+          ? 0
+          : Math.min(idx + 1, keys.length - 1)
+        : idx < 0
+          ? 0
+          : Math.max(idx - 1, 0);
+    selectedKey = keys[next];
+    let row = null;
+    body.querySelectorAll("tbody tr[data-ticker]").forEach((tr) => {
+      const on = `${tr.dataset.ex}:${tr.dataset.ticker}` === selectedKey;
+      tr.classList.toggle("fv-row-on", on);
+      if (on) row = tr;
+    });
+    const wrapEl = body.querySelector(".fv-table-wrap");
+    if (wrapEl && row) {
+      const wr = wrapEl.getBoundingClientRect();
+      const rr = row.getBoundingClientRect();
+      if (rr.top < wr.top) wrapEl.scrollTop += rr.top - wr.top;
+      else if (rr.bottom > wr.bottom) wrapEl.scrollTop += rr.bottom - wr.bottom;
+      tableScrollTop = wrapEl.scrollTop;
+    }
+    if (kind === "tv") {
+      const parts = selectedKey.split(":");
+      changeListing(parts[0], parts.slice(1).join(":"));
+    }
+  }
+  document.addEventListener("keydown", onArrowNav, true);
+
   function pageCurrentItem() {
     if (kind === "screener") return currentScreenerListing();
     if (kind === "chartink") return currentChartinkListing();
     return null;
+  }
+
+  function scanSite() {
+    if (kind === "screener" || kind === "chartink" || kind === "fishrs") return kind;
+    return "";
   }
 
   async function addPageItems(items, { asNewList, listName, flash } = {}) {
@@ -519,7 +586,15 @@ export async function mountPanel() {
 
   async function onPagePlus(e) {
     const ticker = String(e.detail?.ticker || "").toUpperCase();
-    if (!ticker || !phaseLive(5)) return;
+    if (!ticker) return;
+    if (viewAll) {
+      notice = "Pick a named list to add";
+      noticeOk = false;
+      noticeBusy = false;
+      noticeCounts = null;
+      await paint();
+      return;
+    }
     const resolved = preferNseThenBse(ticker);
     const item = resolved.ok ? { exchange: resolved.exchange, ticker: resolved.ticker } : { exchange: "NSE", ticker };
     await showBusy("Checking symbol...");
@@ -572,9 +647,10 @@ export async function mountPanel() {
     void paint();
   });
   let stopPlus = null;
-  if (phaseLive(5) && kind === "screener") stopPlus = startScreenerPlus();
+  if (kind === "screener") stopPlus = startScreenerPlus();
+  if (kind === "chartink") stopPlus = startChartinkPlus();
+  if (kind === "fishrs") stopPlus = startFishRsPlus();
   let stopChartinkTheme = null;
-  if (phaseLive(5) && kind === "chartink") stopPlus = startChartinkPlus();
   if (kind === "chartink") {
     stopChartinkTheme = watchChartinkChartDark(() => {
       void paint();
@@ -584,8 +660,16 @@ export async function mountPanel() {
   host._fvOff = () => {
     document.removeEventListener("pointerdown", onDocPointer, true);
     document.removeEventListener("keydown", onDocKey, true);
+    document.removeEventListener("keydown", onArrowNav, true);
+    window.removeEventListener("mousemove", onWinMouseMove);
+    window.removeEventListener("mouseup", onWinMouseUp);
     document.removeEventListener("fv_page_plus", onPagePlus);
     document.removeEventListener("visibilitychange", onVis);
+    if (onStorageChange) {
+      chrome.storage.onChanged.removeListener(onStorageChange);
+      onStorageChange = null;
+    }
+    cancelPendingCloudPush();
     hideTip();
     cancelLp();
     if (stopPlus) stopPlus();
@@ -687,7 +771,7 @@ export async function mountPanel() {
     });
   }
 
-  function openScanChoice() {
+  function openScanChoice(forceNew = false) {
     return new Promise((resolve) => {
       const wrap = document.createElement("div");
       wrap.className = "fv-modal";
@@ -695,7 +779,7 @@ export async function mountPanel() {
         <div class="fv-modal-card">
           <p>Scan</p>
           <div class="fv-modal-actions stack">
-            <button type="button" class="fv-btn fv-pill fv-pill-add" data-k="current">Add to current watchlist</button>
+            <button type="button" class="fv-btn fv-pill fv-pill-add" data-k="current" ${forceNew ? "disabled" : ""} title="${forceNew ? "Pick a named list first" : ""}">Add to current watchlist</button>
             <button type="button" class="fv-btn fv-pill fv-pill-current" data-k="new">Add to new watchlist</button>
             <button type="button" class="fv-btn fv-pill fv-pill-file" data-k="no">Cancel</button>
           </div>
@@ -707,7 +791,7 @@ export async function mountPanel() {
           wrap.remove();
           resolve(null);
         }
-        if (k === "current" || k === "new") {
+        if ((k === "current" && !forceNew) || k === "new") {
           wrap.remove();
           resolve(k);
         }
@@ -725,7 +809,7 @@ export async function mountPanel() {
           <p class="fv-cloud-sync-note">Use cloud — replace this browser with the copy in Supabase.</p>
           <p class="fv-cloud-sync-note">Keep this browser — upload this PC and replace the cloud copy.</p>
           <p class="fv-cloud-sync-note">Keep both — merge. Same list name unions stocks. Extra cloud lists are added.</p>
-          <p class="fv-cloud-sync-note">Caps: 50 lists, 150 stocks. Leftovers are skipped.</p>
+          <p class="fv-cloud-sync-note">Caps: ${LIST_CAP} lists, ${STOCK_CAP} stocks. Leftovers are skipped.</p>
           <div class="fv-modal-actions stack">
             <button type="button" class="fv-btn fv-pill fv-pill-current" data-k="cloud">Use cloud</button>
             <button type="button" class="fv-btn fv-pill fv-pill-scan" data-k="local">Keep this browser</button>
@@ -741,16 +825,6 @@ export async function mountPanel() {
         }
       });
     });
-  }
-
-  function uniqueImportName(book, raw) {
-    const base = cleanListName(raw) || "Import";
-    if (!book.lists.some((l) => String(l.name).toLowerCase() === base.toLowerCase())) return base;
-    for (let i = 2; i < 99; i++) {
-      const name = `${base} ${i}`.slice(0, 40);
-      if (!book.lists.some((l) => String(l.name).toLowerCase() === name.toLowerCase())) return name;
-    }
-    return `${base} ${Date.now().toString(36)}`.slice(0, 40);
   }
 
   async function offerBulkLog(listName, log) {
@@ -821,7 +895,10 @@ export async function mountPanel() {
       notice = res.ok ? "" : res.error || "Could not save";
       noticeOk = false;
     }
-    if (res.book) book = res.book;
+    if (res.book) {
+      if (res.book.activeId && res.book.activeId !== book.activeId) viewAll = false;
+      book = res.book;
+    }
     if (opts.flash && res.added) armFlash(res.addedItems);
     await paint();
     if (opts.flash && res.added) scrollFlashIntoView();
@@ -880,7 +957,18 @@ export async function mountPanel() {
 
   function showRowMenu(e, ex, ticker) {
     hidePopovers();
-    openRowMenu({ panel, e, book, ex, ticker, applyBook });
+    openRowMenu({ panel, e, book, ex, ticker, applyBook, viewAll, onDeleteAll: confirmDeleteEverywhere });
+  }
+
+  async function confirmDeleteEverywhere(ex, ticker) {
+    const ok = await openModal({
+      title: `Careful: ${ticker} will be removed from ALL watchlists`,
+      showInput: false,
+      ok: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
+    await applyBook(await removeStockEverywhere(book, ex, ticker));
   }
 
   function applyDockWidth(nextPanel) {
@@ -976,8 +1064,8 @@ export async function mountPanel() {
   });
 
   async function loadQuotes(force) {
-    if (!phaseLive(6) || tab !== "watchlist") return;
-    const stocks = activeList(book).stocks;
+    if (tab !== "watchlist") return;
+    const stocks = curList().stocks;
     if (!stocks.length) return;
     const gen = ++quoteGen;
     const haveAny = stocks.some((s) => typeof quotesMap.get(`${s.exchange}:${s.ticker}`)?.price === "number");
@@ -1002,8 +1090,8 @@ export async function mountPanel() {
       clearInterval(quoteTimer);
       quoteTimer = null;
     }
-    if (!phaseLive(6) || tab !== "watchlist") return;
-    if (!quotesNeedLivePoll(activeList(book).stocks)) return;
+    if (tab !== "watchlist") return;
+    if (!quotesNeedLivePoll(curList().stocks)) return;
     quoteTimer = setInterval(() => {
       if (document.visibilityState !== "visible") return;
       void loadQuotes(false);
@@ -1011,13 +1099,17 @@ export async function mountPanel() {
   }
 
   function scheduleQuotes(force) {
-    if (!phaseLive(6)) return;
     void loadQuotes(force);
   }
 
   async function paint() {
     const wrapNow = body.querySelector(".fv-table-wrap");
     if (wrapNow) tableScrollTop = wrapNow.scrollTop;
+    // Popovers inside #fv-body are rebuilt by innerHTML — remember open ones (B-20).
+    const openPops = ["#fv-list-drop", "#fv-xfer-menu", "#fv-list-menu"].filter((sel) => {
+      const el = body.querySelector(sel);
+      return el && !el.hidden;
+    });
     if (selectMode) pruneSelected();
     body.classList.toggle("fv-watch", tab === "watchlist");
     body.classList.toggle("selecting", tab === "watchlist" && selectMode);
@@ -1028,7 +1120,7 @@ export async function mountPanel() {
       const st = await cloudStatus();
       body.innerHTML = `
         <div class="fv-cloud">
-          <p class="fv-phase${ACTIVE_PHASE === 6 ? " fv-phase-warn" : ""}">${phaseBanner(ACTIVE_PHASE)}</p>
+          <p class="fv-phase fv-phase-warn">${BANNER}</p>
           <h3 class="fv-cloud-head ${st.tone === "on" || st.tone === "busy" ? "on" : st.tone === "err" ? "err" : "off"}">${CLOUD_ICON} ${escapeAttr(st.heading)}</h3>
           ${
             cloudNotice
@@ -1076,22 +1168,14 @@ export async function mountPanel() {
     body.innerHTML = watchlistHtml(book, {
       cloudIcon: CLOUD_ICON,
       refreshIcon: REFRESH_ICON,
-      cloudHint: cloudHint(),
       cloudStatus: cloudSt,
-      quoteHint: quoteHint(),
-      ingestHint: ingestHint(),
-      screenerHint: screenerHint(),
-      chartinkHint: chartinkHint(),
-      chartHint: chartHint(),
       notice,
       noticeOk,
       noticeBusy,
       noticeCounts,
       selectedKey,
-      currentReady: (phaseLive(3) && kind === "tv") || (phaseLive(5) && Boolean(pageCurrentItem())),
-      ingestReady: phaseLive(4),
-      scanReady: phaseLive(5) && (kind === "screener" || kind === "chartink"),
-      quotesReady: phaseLive(6),
+      currentReady: kind === "tv" || Boolean(pageCurrentItem()),
+      scanReady: Boolean(scanSite()),
       quotesLoading,
       quotes: quotesMap,
       selecting: selectMode,
@@ -1100,10 +1184,129 @@ export async function mountPanel() {
       selConfirm,
       flashKeys,
       chartinkChartDark: kind === "chartink" && chartinkChartDarkOffer(),
+      viewList: curList(),
+      viewAll,
+      allStocks: allUniqueStocks(book).length,
     });
     const wrap = body.querySelector(".fv-table-wrap");
     if (wrap) wrap.scrollTop = tableScrollTop;
+    for (const sel of openPops) {
+      const el = body.querySelector(sel);
+      if (el) el.hidden = false;
+    }
     if (keepLabelPop && tab === "watchlist") placeLabelPop();
+  }
+
+  async function setDestConfirm(destId, destName) {
+    const n = selected.size;
+    const verb = selDestKind === "copy" ? "Copy" : "Move";
+    selConfirm = {
+      kind: selDestKind,
+      destId,
+      from: "actions",
+      ok: "Confirm",
+      text: `${verb} ${n} ${stockNoun(n)} to ${destName}?`,
+    };
+    selView = "confirm";
+    await paint();
+  }
+
+  // Floating destination picker — identical structure to the row right-click
+  // Move/Copy menu (nav, pick list, create-new form), so bulk stays compact.
+  function openBulkDestPicker(copy) {
+    panel.querySelectorAll(".fv-ctx").forEach((m) => m.remove());
+    const verb = copy ? "Copy" : "Move";
+    const menu = document.createElement("div");
+    menu.className = "fv-ctx";
+    const dests = otherLists(book, book.activeId);
+    const rows = dests.length
+      ? dests
+          .map(
+            (l) =>
+              `<button type="button" class="fv-ctx-row" data-to="${esc(l.id)}" title="${esc(l.name)}">
+                <span>${esc(l.name)} (${l.stocks.length})</span>
+              </button>`
+          )
+          .join("")
+      : `<div class="fv-ctx-empty">No other lists yet</div>`;
+    menu.innerHTML = `
+      <div class="fv-ctx-nav">
+        <button type="button" class="fv-ctx-back" data-bact="back">← Back</button>
+        <span>${verb} ${selected.size} ${stockNoun(selected.size)} to</span>
+      </div>
+      <div class="fv-ctx-pick">${rows}</div>
+      ${
+        book.lists.length < LIST_CAP
+          ? `<div class="fv-ctx-line"></div>
+             <div class="fv-ctx-new">
+               <button type="button" class="fv-ctx-link" data-bact="show-new">+ Create new list…</button>
+               <div class="fv-ctx-newform" hidden>
+                 <input type="text" class="fv-ctx-newin" maxlength="${NAME_MAX}" />
+                 <button type="button" class="fv-btn fv-pill fv-pill-add fv-ctx-gonew" data-bact="create">${verb} to new list</button>
+               </div>
+             </div>`
+          : `<div class="fv-ctx-empty">Maximum ${LIST_CAP} lists</div>`
+      }
+    `;
+    panel.appendChild(menu);
+    menu.style.left = "8px";
+    const bar = body.querySelector("#fv-sel-bar");
+    if (bar) {
+      const pr = panel.getBoundingClientRect();
+      const br = bar.getBoundingClientRect();
+      let top = br.top - pr.top - menu.offsetHeight - 6;
+      if (top < 4) top = 4;
+      menu.style.top = `${top}px`;
+    } else {
+      menu.style.bottom = "8px";
+    }
+    menu.addEventListener("click", async (ev) => {
+      const btn = ev.target.closest("[data-bact], [data-to]");
+      if (!btn) return;
+      ev.stopPropagation();
+      const act = btn.getAttribute("data-bact");
+      if (act === "back") {
+        menu.remove();
+        return;
+      }
+      if (act === "show-new") {
+        btn.hidden = true;
+        const form = menu.querySelector(".fv-ctx-newform");
+        if (form) form.hidden = false;
+        const input = menu.querySelector(".fv-ctx-newin");
+        if (input) {
+          isolateElement(input);
+          input.focus();
+        }
+        return;
+      }
+      if (act === "create") {
+        const input = menu.querySelector(".fv-ctx-newin");
+        const name = String(input?.value || "").trim();
+        if (!name) return;
+        menu.remove();
+        const made = await createDestList(book, name);
+        if (!made.ok) {
+          await applyBook(made);
+          return;
+        }
+        book = made.book;
+        await setDestConfirm(made.id, made.name);
+        return;
+      }
+      const toId = btn.getAttribute("data-to");
+      if (toId) {
+        const dest = book.lists.find((l) => l.id === toId);
+        menu.remove();
+        if (!dest) return;
+        await setDestConfirm(dest.id, dest.name);
+      }
+    });
+    menu.addEventListener("keydown", (ev) => {
+      if (ev.key !== "Enter" || !ev.target.classList?.contains("fv-ctx-newin")) return;
+      ev.preventDefault();
+      menu.querySelector("[data-bact='create']")?.click();
+    });
   }
 
   async function runSelAction(act, el) {
@@ -1135,8 +1338,10 @@ export async function mountPanel() {
     if (act === "move" || act === "copy") {
       if (!selected.size) return true;
       selDestKind = act;
-      selView = "dest";
+      selView = "actions";
+      selConfirm = null;
       await paint();
+      openBulkDestPicker(act === "copy");
       return true;
     }
     if (act === "delete") {
@@ -1162,45 +1367,6 @@ export async function mountPanel() {
         from: "label",
         ok: "Confirm",
         text: lab === "none" ? `Unlabel ${n} ${stockNoun(n)}?` : `Apply ${title} to ${n} ${stockNoun(n)}?`,
-      };
-      selView = "confirm";
-      await paint();
-      return true;
-    }
-    if (act === "pick-dest") {
-      const destId = el.getAttribute("data-to");
-      const dest = book.lists.find((l) => l.id === destId);
-      if (!dest) return true;
-      const n = selected.size;
-      const verb = selDestKind === "copy" ? "Copy" : "Move";
-      selConfirm = {
-        kind: selDestKind,
-        destId,
-        from: "dest",
-        ok: "Confirm",
-        text: `${verb} ${n} ${stockNoun(n)} to ${dest.name}?`,
-      };
-      selView = "confirm";
-      await paint();
-      return true;
-    }
-    if (act === "new-dest") {
-      const name = await openModal({ title: "New list", value: "List", ok: "Create" });
-      if (!name) return true;
-      const made = await createDestList(book, name);
-      if (!made.ok) {
-        await applyBook(made);
-        return true;
-      }
-      book = made.book;
-      const n = selected.size;
-      const verb = selDestKind === "copy" ? "Copy" : "Move";
-      selConfirm = {
-        kind: selDestKind,
-        destId: made.id,
-        from: "dest",
-        ok: "Confirm",
-        text: `${verb} ${n} ${stockNoun(n)} to ${made.name}?`,
       };
       selView = "confirm";
       await paint();
@@ -1361,8 +1527,9 @@ export async function mountPanel() {
         return;
       }
       if (synced.book) book = synced.book;
+      viewAll = true;
       const skipBits = [];
-      if (synced.skippedStocks) skipBits.push(`${synced.skippedStocks} stocks skipped (150 cap)`);
+      if (synced.skippedStocks) skipBits.push(`${synced.skippedStocks} stocks skipped (${STOCK_CAP} cap)`);
       if (synced.skippedLists) skipBits.push(`${synced.skippedLists} lists skipped (50 cap)`);
       setCloudNotice(skipBits.length ? skipBits.join(". ") : "", true);
       await paint();
@@ -1510,7 +1677,15 @@ export async function mountPanel() {
     if (listOpt) {
       hidePopovers();
       exitSelect();
-      await applyBook(await setActive(book, listOpt.getAttribute("data-list")));
+      const id = listOpt.getAttribute("data-list");
+      if (id === ALL_STOCKS_ID) {
+        viewAll = true;
+        await paint();
+        scheduleQuotes();
+        return;
+      }
+      viewAll = false;
+      await applyBook(await setActive(book, id));
       return;
     }
 
@@ -1523,14 +1698,14 @@ export async function mountPanel() {
 
     if (e.target.closest("#fv-quotes-go")) {
       hidePopovers();
-      if (!phaseLive(6) || quotesBusy) return;
+      if (quotesBusy) return;
       await loadQuotes(true);
       return;
     }
 
     if (e.target.closest("[data-act='add-stocks']") || e.target.closest("#fv-add")) {
       hidePopovers();
-      if (!phaseLive(4)) return;
+      if (viewAll) return;
       await clearStatus();
       const raw = await openModal({
         title: "Add symbols (max 5)",
@@ -1589,10 +1764,10 @@ export async function mountPanel() {
     const xferAct = e.target.closest("#fv-xfer-menu [data-act]");
     if (xferAct) {
       hidePopovers();
-      if (!phaseLive(4) || xferAct.disabled) return;
+      if (xferAct.disabled) return;
       const act = xferAct.getAttribute("data-act");
       if (act === "export-file") {
-        const list = activeList(book);
+        const list = curList();
         const name = `${cleanListName(list.name) || "watchlist"}.csv`;
         downloadText(name, formatCsv(list));
         return;
@@ -1647,7 +1822,15 @@ export async function mountPanel() {
           await paint();
           return;
         }
-        const name = uniqueImportName(book, file.name.replace(/\.csv$/i, ""));
+        const name = cleanListName(file.name.replace(/\.csv$/i, "")) || "Import";
+        if (nameTaken(book, name)) {
+          notice = `Watchlist "${name}" already exists`;
+          noticeOk = false;
+          noticeBusy = false;
+          noticeCounts = null;
+          await paint();
+          return;
+        }
         const res = await createListWithStocks(book, name, known);
         const failed = (res.failed || 0) + unknown.length;
         unknown.forEach((it) => (res.log || (res.log = [])).push(`${it.exchange}:${it.ticker} failed unknown`));
@@ -1661,6 +1844,7 @@ export async function mountPanel() {
     const listAct = e.target.closest("#fv-list-menu [data-act]");
     if (listAct) {
       hidePopovers();
+      if (viewAll) return;
       const act = listAct.getAttribute("data-act");
       const list = activeList(book);
       if (act === "rename-list") {
@@ -1681,8 +1865,14 @@ export async function mountPanel() {
 
     if (e.target.closest("#fv-scan")) {
       hidePopovers();
-      if (!phaseLive(5) || (kind !== "screener" && kind !== "chartink")) return;
-      const tickers = kind === "screener" ? collectScreenerTickers() : collectChartinkTickers();
+      const site = scanSite();
+      if (!site) return;
+      const tickers =
+        site === "screener"
+          ? collectScreenerTickers()
+          : site === "chartink"
+            ? collectChartinkTickers()
+            : collectFishRsTickers();
       if (!tickers.length) {
         notice = "No symbols on this page";
         noticeOk = false;
@@ -1699,9 +1889,13 @@ export async function mountPanel() {
         await paint();
         return;
       }
-      const dest = await openScanChoice();
+      // All Unique Stock is a computed view: the "current watchlist" choice is disabled.
+      const dest = await openScanChoice(viewAll);
       if (!dest) return;
       const items = tickers.map((t) => {
+        if (t && typeof t === "object" && t.ticker) {
+          return { exchange: String(t.exchange || "NSE").toUpperCase(), ticker: String(t.ticker).toUpperCase() };
+        }
         const resolved = preferNseThenBse(t);
         return resolved.ok ? { exchange: resolved.exchange, ticker: resolved.ticker } : { exchange: "NSE", ticker: t };
       });
@@ -1727,7 +1921,9 @@ export async function mountPanel() {
         await paint();
         return;
       }
-      const name = await openModal({ title: "New list", value: kind === "screener" ? "Screener" : "Chartink", ok: "Create" });
+      const suggested =
+        kind === "screener" ? "Screener" : kind === "chartink" ? "Chartink" : "FishRS";
+      const name = await openModal({ title: "New list", value: suggested, ok: "Create" });
       if (!name) return;
       await showBusy("Scanning...");
       await addPageItems(items, { asNewList: true, listName: name });
@@ -1736,7 +1932,8 @@ export async function mountPanel() {
 
     if (e.target.closest("#fv-current")) {
       hidePopovers();
-      if (phaseLive(5) && (kind === "screener" || kind === "chartink")) {
+      if (viewAll) return;
+      if (kind === "screener" || kind === "chartink") {
         const item = pageCurrentItem();
         if (!item?.ticker) {
           notice = "This symbol doesn't exist";
@@ -1750,7 +1947,7 @@ export async function mountPanel() {
         await addPageItems([item]);
         return;
       }
-      if (!phaseLive(3) || kind !== "tv") return;
+      if (kind !== "tv") return;
       const cur = await askCurrentListing();
       let ticker = String(cur?.ticker || "").trim();
       let exchange = canonicalExchange(cur?.exchange);
@@ -1777,7 +1974,7 @@ export async function mountPanel() {
     if (e.target.closest("#fv-list-new")) {
       hidePopovers();
       const plus = e.target.closest("#fv-list-new");
-      const name = await openModal({ title: "New list", value: "List", ok: "Create", anchor: plus });
+      const name = await openModal({ title: "New list", value: "", ok: "Create", anchor: plus });
       if (name) await applyBook(await createList(book, name));
       return;
     }
@@ -1803,7 +2000,7 @@ export async function mountPanel() {
         tr.classList.toggle("fv-row-on", `${tr.dataset.ex}:${tr.dataset.ticker}` === selectedKey);
       });
       hidePopovers();
-      if (phaseLive(3) && kind === "tv") {
+      if (kind === "tv") {
         changeListing(stockRow.dataset.ex, stockRow.dataset.ticker);
       } else if (kind !== "tv") {
         chrome.runtime.sendMessage({
@@ -1846,6 +2043,14 @@ export async function mountPanel() {
     lpStart = { x: e.clientX, y: e.clientY };
     lpTimer = window.setTimeout(() => {
       lpTimer = null;
+      if (viewAll) {
+        notice = "Bulk actions are not available in All Unique Stock";
+        noticeOk = false;
+        noticeBusy = false;
+        noticeCounts = null;
+        paint();
+        return;
+      }
       enterSelect(key);
     }, 500);
   });
@@ -1883,20 +2088,21 @@ export async function mountPanel() {
     document.body.style.userSelect = "none";
   });
 
-  window.addEventListener("mousemove", (e) => {
+  const onWinMouseMove = (e) => {
     if (!drag || !document.getElementById(HOST_ID) || minimized) return;
     applyDockWidth(Math.min(maxW, Math.max(minW, startW + (startX - e.clientX))));
-  });
-
-  window.addEventListener("mouseup", async () => {
+  };
+  const onWinMouseUp = async () => {
     if (!drag) return;
     drag = false;
     document.body.style.cursor = "";
     document.body.style.userSelect = "";
     await set(widthKey, panelW);
-  });
+  };
+  window.addEventListener("mousemove", onWinMouseMove);
+  window.addEventListener("mouseup", onWinMouseUp);
 
-  chrome.storage.onChanged.addListener((changes, area) => {
+  onStorageChange = (changes, area) => {
     if (area !== "local") return;
     if (!document.getElementById(HOST_ID)) return;
     if (changes[widthKey] && !drag) {
@@ -1910,7 +2116,8 @@ export async function mountPanel() {
       paint();
       scheduleQuotes();
     }
-  });
+  };
+  chrome.storage.onChanged.addListener(onStorageChange);
 
   paint();
   void ensureBoardBook();
@@ -1919,8 +2126,5 @@ export async function mountPanel() {
 }
 
 function escapeAttr(s) {
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/"/g, "&quot;")
-    .replace(/</g, "&lt;");
+  return esc(s);
 }

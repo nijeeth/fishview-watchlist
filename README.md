@@ -1,11 +1,11 @@
 # FishView Watchlist
 
-**A stock watchlist docked beside TradingView, Screener.in and Chartink. Your lists stay on your computer, and cloud sync is optional.**
+**A stock watchlist docked beside TradingView, Screener.in, Chartink and Fish RS Board. Your lists stay on your computer, and cloud sync is optional.**
 
-`Chrome extension` · `Manifest V3` · **v1.0.0** · Chrome **111+**
+`Chrome extension` · `Manifest V3` · **v2.0.0** · Chrome **111+**
 
 **Support:** [nijeethfish@gmail.com](mailto:nijeethfish@gmail.com)  
-**Privacy policy:** [https://sites.google.com/view/fishviewwatchlist-privacy](https://sites.google.com/view/fishviewwatchlist-privacy) · [PRIVACY.md](./PRIVACY.md)
+**Privacy policy:** [https://sites.google.com/view/fishview-watchlist-privacy](https://sites.google.com/view/fishview-watchlist-privacy) · [PRIVACY.md](./PRIVACY.md)
 
 - Architecture: [ARCHITECTURE.md](./ARCHITECTURE.md)
 - What’s in this version: [PHASES.md](./PHASES.md)
@@ -18,9 +18,9 @@
 
 ## Overview
 
-FishView Watchlist adds a **watchlist dock on the right side** of TradingView, Screener.in and Chartink. The dock does not cover the page. It **pushes the page aside** by adjusting its width and right margin, so the chart or screener stays fully visible.
+FishView Watchlist adds a **watchlist dock on the right side** of TradingView, Screener.in, Chartink and Fish RS Board. The dock does not cover the page. It **pushes the page aside** by adjusting its width and right margin, so the chart or screener stays fully visible.
 
-You can keep up to **50 lists of 150 stocks each**. You can colour-label, sort, filter and bulk-edit rows, and add stocks by pasting, importing a CSV file or scanning a screener results page. On TradingView, clicking a row switches the chart to that stock without reloading the page.
+You can keep up to **50 lists of 200 stocks each**. You can colour-label, sort, filter and bulk-edit rows, and add stocks by pasting, importing a CSV file or scanning a screener results page. On TradingView, clicking a row switches the chart to that stock without reloading the page.
 
 Prices, % change and market cap come from Yahoo Finance. They cover **the open list only**, refresh **every 60 seconds** and are **not realtime**.
 
@@ -55,16 +55,17 @@ Everything is saved in your browser by default. You can also sync your lists to 
 ### Dock
 - Right-side dock that **pushes** the page instead of covering it.
 - **Watchlist** and **Cloud** tabs. The Watchlist cloud line shows a cloud icon, short status words, and **Sync**.
-- **Resizable** by dragging the **left edge**. TradingView **220–420** px (default 350); Screener/Chartink **180–280** px (default 200), remembered separately. Below ~300 px on TradingView, pills shrink type (`data-narrow`) instead of wrapping taller.
+- **Resizable** by dragging the **left edge**. TradingView **220–420** px (default 350); Screener/Chartink/Fish RS Board **180–280** px (default 200), remembered separately. Below ~300 px on TradingView, pills shrink type (`data-narrow`) instead of wrapping taller.
 - **Minimise** with the **×** button or by clicking the blue header. The dock shrinks to a mini bar. Click the mini bar to restore.
 - **Night / Day** in the dock header. The Help page follows this setting.
-- A compact layout (smaller text) on Screener.in and Chartink.
+- A compact layout (smaller text) on Screener.in, Chartink and Fish RS Board.
 - Narrow dock: File **Import/Export** still opens; column headers stay opaque over scrolling rows. **Filter Applied** colour dots stay **10px**.
 - **Turn the dock on or off per site** from the toolbar popup (no page reload required).
 
 ### Lists
-- Up to **50 lists**, each with up to **150 stocks**.
-- Create, rename and delete lists. The list picker is sorted A–Z.
+- Up to **50 lists**, each with up to **200 stocks**.
+- **All Unique Stock**: a computed view at the top of the picker showing every unique stock across all lists. It is not stored and has no stock limit. Add and Current are off there; delete warns that the stock is removed from **all** lists.
+- Create, rename and delete lists. Names allow letters, numbers, spaces, `-` and `+`, up to **25 characters**. Hover a list name to see its full name and count.
 - **Colour labels**: green, blue, orange and red, or unlabeled.
 - **Sort** by name, price, % change, market cap or label, ascending or descending.
 - **Filter** by label. Several labels can be on at once, and a row shows if it matches any of them.
@@ -75,13 +76,14 @@ Everything is saved in your browser by default. You can also sync your lists to 
 ### Adding stocks
 - **Paste / Add**: up to 5 symbols at a time, **comma-separated**, added to the open list.
 - **CSV import** of `NSE:` / `BSE:` symbols into a new list, and **CSV export** of the open list.
-- **Scan** a Screener.in or Chartink results table.
-- **Row +** buttons next to stocks on Screener.in and Chartink.
+- **Scan** a Screener.in, Chartink or Fish RS Board results table.
+- **Row +** buttons next to stocks on Screener.in, Chartink and Fish RS Board.
 - **Current** adds the stock you are looking at, from the TradingView chart or a Screener/Chartink company or stock page.
 - Bare names such as `SBIN` are matched to **NSE first, then BSE**, using a bundled list of NSE/BSE equities that is refreshed from Fyers' public symbol list at most once every 24 hours.
 
 ### Charts (TradingView)
 - **Click a row** to switch the TradingView chart in the same tab, without reloading.
+- **Up / Down arrows** walk the selection through the dock list and switch the chart — instead of moving TradingView's own watchlist.
 - **Current** reads the chart's `pro_name`. US stocks are stored as `NASDAQ:` / `NYSE:`.
 - Works alongside the *Chart Funda* extension, because FishView uses its own `fv_*` event names.
 
@@ -106,6 +108,7 @@ Everything is saved in your browser by default. You can also sync your lists to 
 | TradingView | `https://www.tradingview.com/*`, `https://in.tradingview.com/*`, `https://es.tradingview.com/*` | Dock, lists, quotes, **row click switches the chart**, **Current** from the chart |
 | Screener.in | `https://www.screener.in/*`, `https://screener.in/*` | Dock (compact), lists, quotes, **Scan**, **row +**, **Current** from the company page URL |
 | Chartink | `https://chartink.com/*`, `https://www.chartink.com/*` | Dock (compact), lists, quotes, **Scan**, **row +**, **Current** from the stock page URL |
+| Fish RS Board | `https://fish-rs-board.pages.dev/*` | Dock (compact), lists, quotes, **Scan**, **row +** |
 
 The dock loads only in the main page, not inside embedded frames. Chart switching is available only on TradingView. Screener.in and Chartink have no chart API that FishView can call. Other TradingView locales are not injected.
 
@@ -192,17 +195,17 @@ After the listing is live, add that URL here. Until then, use [Load unpacked](#l
 1. **Press and hold a row for about half a second.** Checkboxes appear in the label column.
 2. Tick up to **30** rows, or use the header checkbox to select all (up to 30).
 3. Choose an action: **label**, **unlabel**, **copy to** or **move to** another list, or **delete**. Every bulk action asks you to confirm.
-4. When you copy or move into a list that is nearly full, **only as many rows as fit** under the 150 limit are added.
+4. When you copy or move into a list that is nearly full, **only as many rows as fit** under the 200 limit are added.
 
 ### Adding stocks
 
 | Method | Where | How it works |
 |---|---|---|
 | **Add** (paste) | All sites | Type or paste up to **5** symbols, **comma-separated**. They go into the **open list**. Bare names (e.g. `SBIN`) are matched to NSE first, then BSE. US stocks can be added with their exchange prefix, e.g. `NASDAQ:AAPL`. |
-| **File → CSV import** | All sites | Imports a CSV of `NSE:` / `BSE:` symbols into a **new list**. A file with **more than 150** stocks is **rejected completely**. |
+| **File → CSV import** | All sites | Imports a CSV of `NSE:` / `BSE:` symbols into a **new list**. A file with **more than 200** stocks is **rejected completely**. |
 | **File → CSV export** | All sites | Saves the **open list** as CSV. |
-| **Scan** | Screener.in, Chartink | Reads the stock links in the results table on the page. If it finds **more than 150**, nothing is added. You then choose **this list** (if there is room) or **a new list**. |
-| **Row +** | Screener.in, Chartink | Click the **+** FishView adds beside a stock row to add that stock. |
+| **Scan** | Screener.in, Chartink, Fish RS Board | Reads the stock links in the results table on the page. If it finds **more than 200**, nothing is added. You then choose **this list** (if there is room) or **a new list**. |
+| **Row +** | Screener.in, Chartink, Fish RS Board | Click the **+** FishView adds beside a stock row to add that stock. |
 | **Current** | TradingView, Screener.in, Chartink | Adds the stock you're viewing. On TradingView it reads the chart symbol. On Screener/Chartink it reads the company or stock page address. |
 
 **CSV format.** Use only the `NSE:` or `BSE:` prefixes. US stocks can't be imported by CSV, so use **Add** or **Current** for them. Symbols must be **comma-separated** (newlines are allowed as well as commas). A first cell named `symbol`, `ticker`, `name`, `scrip`, `code` or `exchange` is skipped if it is not itself a prefixed symbol. Labels are not read.
@@ -231,7 +234,7 @@ After CSV import or Scan, FishView may ask whether to save a **text import log**
 - Updated from Yahoo **every 60 seconds**. **Not realtime.** Quotes are not saved.
 - Indices show `-` for market cap. F&O and unrecognised symbols show `-`.
 - Use the header **refresh** icon to retry the open list.
-- The Watchlist caution line is **Careful: Not realtime. Prices from Yahoo every 60s** (at most two lines when the dock is narrow).
+- The Watchlist caution line is **WARNING: Delayed Price Data** (at most two lines when the dock is narrow).
 - Nothing is fetched while the dock is closed.
 
 ---
@@ -275,7 +278,7 @@ Messages about connecting, disconnecting or deleting show **only on the Cloud ta
 
 The Cloud tab help controls are a **2×2** grid: Open Supabase, Help, Copy Setup SQL, **Log**.
 
-**Connect** may show three choices if this browser and the cloud copy differ (first Connect, or last sync **7 days** or older). **Use cloud** replaces this browser. **Keep this browser** uploads and replaces cloud. **Keep both** merges (same list name unions stocks; extra cloud lists are added; over 50 lists or 150 stocks, leftovers are skipped). Matching books skip the popup. Within 7 days, last-write-wins pull applies without the popup.
+**Connect** may show three choices if this browser and the cloud copy differ (first Connect, or last sync **7 days** or older). **Use cloud** replaces this browser. **Keep this browser** uploads and replaces cloud. **Keep both** merges (same list name unions stocks; extra cloud lists are added; over 50 lists or 200 stocks, leftovers are skipped). Matching books skip the popup. Within 7 days, last-write-wins pull applies without the popup.
 
 **Cloud Backup** is in the Cloud tab markup but **hidden**, so it is not shown as a dead control. **Connect** already syncs lists. For a file copy on this computer, use Watchlist **Backup Local** / **Restore Backup**.
 
@@ -298,12 +301,12 @@ The Cloud tab help controls are a **2×2** grid: Open Supabase, Help, Copy Setup
 | Rule | Limit / behaviour |
 |---|---|
 | Lists | Max **50** |
-| Stocks per list | Max **150** |
+| Stocks per list | Max **200** |
 | Bulk selection | Max **30** rows |
 | Add (paste) | Max **5** symbols per add, commas, into the open list |
-| CSV import | **More than 150** stocks → the whole file is rejected. `NSE:` / `BSE:` prefixes only. |
-| Scan | **More than 150** found → nothing added |
-| Copy / move into a list | Adds only what fits under 150 |
+| CSV import | **More than 200** stocks → the whole file is rejected. `NSE:` / `BSE:` prefixes only. |
+| Scan | **More than 200** found → nothing added |
+| Copy / move into a list | Adds only what fits under 200 |
 | List names | Letters, numbers, spaces and hyphens. Must be unique. |
 | Row identity | Exchange + ticker |
 | Bare names | Matched to NSE first, then BSE |
@@ -318,7 +321,7 @@ The Cloud tab help controls are a **2×2** grid: Open Supabase, Help, Copy Setup
 
 FishView is **local-first**. There is **no FishView server**. The manifest's network permissions cover only the market-data sources below and, if you turn on sync, your own Supabase project. The extension contains no analytics, advertising or tracking hosts, and your data is not sent to the developer.
 
-**Privacy policy (public):** [https://sites.google.com/view/fishviewwatchlist-privacy](https://sites.google.com/view/fishviewwatchlist-privacy)  
+**Privacy policy (public):** [https://sites.google.com/view/fishview-watchlist-privacy](https://sites.google.com/view/fishview-watchlist-privacy)  
 **Repo copy:** [PRIVACY.md](./PRIVACY.md)  
 **Support:** [nijeethfish@gmail.com](mailto:nijeethfish@gmail.com)
 
@@ -347,7 +350,7 @@ Quotes are **not** stored. Uninstalling the extension removes this storage. **De
 | `fc.yahoo.com`, `finance.yahoo.com` | As needed to obtain Yahoo’s crumb | Cookie / crumb Yahoo’s quote endpoints require, plus the usual request metadata |
 | `public.fyers.in` | At most once every 24 hours | A download request for Fyers' public NSE/BSE equity symbol list. No personal data is sent. First-run retry uses `chrome.alarms`. |
 | `*.supabase.co` (your project only) | Only after you enter cloud details and click Connect | Your Authentication email and password (to sign in; the password is not stored), then your list book (lists, stocks, labels) |
-| `tradingview.com`, `screener.in`, `chartink.com` | When you visit them | FishView sends nothing to these sites. It reads the page you are on (the chart symbol, the page address, stock links in results tables) to add stocks, and draws the dock on the page. |
+| `tradingview.com`, `screener.in`, `chartink.com`, `fish-rs-board.pages.dev` | When you visit them | FishView sends nothing to these sites. It reads the page you are on (the chart symbol, the page address, stock links in results tables) to add stocks, and draws the dock on the page. |
 
 The Help page is packaged with the extension and loads no remote scripts, fonts or images. **Open Supabase** goes to `supabase.com/dashboard`.
 
@@ -373,6 +376,7 @@ The Help page is packaged with the extension and loads no remote scripts, fonts 
 | `https://www.tradingview.com/*`, `https://in.tradingview.com/*`, `https://es.tradingview.com/*` | Show the dock on TradingView. A small script in the page switches the chart symbol when you click a row and reads the current symbol for **Current**. |
 | `https://www.screener.in/*`, `https://screener.in/*` | Show the dock on Screener.in, and support **Scan**, **row +** and **Current** from the company page. |
 | `https://chartink.com/*`, `https://www.chartink.com/*` | Show the dock on Chartink, and support **Scan**, **row +** and **Current** from the stock page. |
+| `https://fish-rs-board.pages.dev/*` | Show the dock on Fish RS Board, and support **Scan** and **row +**. |
 | `https://public.fyers.in/*` | Download the public NSE/BSE equity symbol list (cached for 24 h) so bare names like `SBIN` resolve to the right exchange. |
 | `https://query1.finance.yahoo.com/*`, `https://query2.finance.yahoo.com/*` | Fetch delayed price, % change and market cap for the open list. |
 | `https://fc.yahoo.com/*`, `https://finance.yahoo.com/*` | Get the cookie / "crumb" that Yahoo's quote endpoints require. |
@@ -400,7 +404,7 @@ This is normal for an index's market cap and for F&O or unrecognised symbols. Fo
 They aren't meant to be. Quotes come from Yahoo every 60 seconds and are not realtime.
 
 **My CSV was rejected.**
-It probably has more than 150 stocks, no commas, or uses a prefix other than `NSE:` / `BSE:`. Split the file into smaller lists, and add US stocks with **Add** or **Current**.
+It probably has more than 200 stocks, no commas, or uses a prefix other than `NSE:` / `BSE:`. Split the file into smaller lists, and add US stocks with **Add** or **Current**.
 
 **Add only took 5 symbols.**
 Add accepts up to 5 at a time, comma-separated. Use CSV import for larger batches.
@@ -445,8 +449,7 @@ Each domain folder has its own `index.js` entry, and the dock (`shell/`) calls t
 
 | Path | Owns |
 |---|---|
-| `manifest.json` | MV3 manifest (**v1.0.0**) |
-| `config/` | Watchlist caution banner (`phase.js`) |
+| `manifest.json` | MV3 manifest (**v2.0.0**) |
 | `persist/` | `chrome.storage.local` keys |
 | `lists/` | `listBook` CRUD, labels, sort, filter, caps, bulk (`bulk.js`), local backup JSON (`backup.js`), mutations (`book.js`) |
 | `ingest/` | Paste, CSV import, export, bulk log |
@@ -456,6 +459,8 @@ Each domain folder has its own `index.js` entry, and the dock (`shell/`) calls t
 | `sites/charts/` | TradingView `fv_*` bridge + `page-bridge.js` (MAIN world) |
 | `sites/screener/` | Scan, row +, company URL |
 | `sites/chartink/` | Scan, row +, stock URL |
+| `sites/fishrs/` | Scan, row + |
+| `test/` | `node --test` unit tests for the pure modules |
 | `cloud/` | Supabase auth, `fv_list_book` read/write, 2 s push, pull on return |
 | `shared/` | Key isolation (`isolate-keys.js`) |
 | `background/` | Service worker (`index.js`): opens the Help page, Yahoo crumb/JSON, Fyers dump, `FV_CLOUD_HTTP` |
@@ -472,7 +477,7 @@ Each domain folder has its own `index.js` entry, and the dock (`shell/`) calls t
 ### Architecture summary
 
 ```
-Page (TradingView / Screener.in / Chartink)
+Page (TradingView / Screener.in / Chartink / Fish RS Board)
   → content script shell/boot.js   (isolated world; skips iframes)
        → site gate (popup toggle for this host)
        → shell/mount.js → #fv-root (open shadow DOM), page pushed via --fv-dock-w
@@ -504,7 +509,7 @@ The source files don't describe a build step. The extension loads directly from 
 - **Namespace everything `fv`.** Storage keys `fv…`, DOM host `#fv-root`, TradingView bridge events `fv_*` (`fv_change_symbol`, `fv_request_symbol`), Supabase table `fv_list_book`. This lets FishView coexist with Chart Funda (`tvf_*`).
 - **Module boundaries:**
   - `shell` does not import Yahoo code, `quotes` does not import Chartink code, and `cloud` does not import TradingView code.
-  - Site folders (`sites/charts`, `sites/screener`, `sites/chartink`) never import each other.
+  - Site folders (`sites/charts`, `sites/screener`, `sites/chartink`, `sites/fishrs`) never import each other.
   - Go through each folder's `index.js` entry.
 - **List mutations** only through `lists/book.js` → `saveBook` → `normalizeBook`.
 - **Never store the cloud password** in `chrome.storage`.
@@ -516,14 +521,14 @@ The source files don't describe a build step. The extension loads directly from 
 
 ### How to test
 
-No automated test suite. Use this manual checklist from `PHASES.md` and `ARCHITECTURE.md`:
+Unit tests cover the pure modules — run `node --test test/` from the project root. For the dock itself, use this manual checklist from `PHASES.md` and `ARCHITECTURE.md`:
 
 - [ ] **Dock:** it appears on TradingView (www/in/es), Screener.in and Chartink and pushes the page. Resize is clamped (TV 220–420, web 180–280). × and header click minimise. Each popup toggle hides the dock on its site without a full reload.
-- [ ] **Lists:** create, rename and delete. The 51st list is refused. Invalid or duplicate names are refused. The 151st stock is refused.
+- [ ] **Lists:** create, rename and delete. The 51st list is refused. Invalid or duplicate names are refused. The 201st stock is refused.
 - [ ] **Labels / sort / filter:** label sort puts unlabeled rows last in both directions. The last filter tick can't be removed. Closing the filter with none ticked restores all.
 - [ ] **Bulk:** a 500 ms long-press enters batch mode. The 31st selection is refused. Copy/move adds what fits and arrives unlabeled.
-- [ ] **Ingest:** Add accepts 5 comma-separated symbols and refuses more. A CSV with 151 rows is rejected completely. Bare `RELIANCE` resolves to NSE.
-- [ ] **Sites:** Scan with more than 150 adds nothing. Scan can target this list or a new list. Row + works. Current works from a Screener company URL and a Chartink stock URL.
+- [ ] **Ingest:** Add accepts 5 comma-separated symbols and refuses more. A CSV with 201 rows is rejected completely. Bare `RELIANCE` resolves to NSE.
+- [ ] **Sites:** Scan with more than 200 adds nothing. Scan can target this list or a new list. Row + works on Screener, Chartink and Fish RS Board. Current works from a Screener company URL and a Chartink stock URL. The Fish RS Board popup toggle works.
 - [ ] **Charts:** row click switches TradingView without reloading. Current on a US stock stores `NASDAQ:` / `NYSE:`, never `BATS` / `CBOE` / `CBOEONE`.
 - [ ] **Quotes:** numbers appear on the open list only. Other lists aren't fetched until opened. Nothing is polled with the dock closed. Header refresh retries.
 - [ ] **Backup:** Backup Local, then Restore Backup, round-trips all lists and labels, and restore overwrites.
@@ -545,7 +550,7 @@ No automated test suite. Use this manual checklist from `PHASES.md` and `ARCHITE
    ```
 
 5. Test the zip: unzip it into a clean folder, **Load unpacked**, and run the checklist above.
-6. Upload it in the Chrome Web Store Developer Dashboard. Licence: **MIT**. Privacy policy: [https://sites.google.com/view/fishviewwatchlist-privacy](https://sites.google.com/view/fishviewwatchlist-privacy). Support: [nijeethfish@gmail.com](mailto:nijeethfish@gmail.com). Listing copy: [appendix](#appendix-chrome-web-store-listing-copy). Screenshots: add at publish.
+6. Upload it in the Chrome Web Store Developer Dashboard. Licence: **MIT**. Privacy policy: [https://sites.google.com/view/fishview-watchlist-privacy](https://sites.google.com/view/fishview-watchlist-privacy). Support: [nijeethfish@gmail.com](mailto:nijeethfish@gmail.com). Listing copy: [appendix](#appendix-chrome-web-store-listing-copy). Screenshots: add at publish.
 
 ---
 
@@ -598,7 +603,8 @@ FishView Watchlist is a stock watchlist in a side panel. On the chart and screen
 The toolbar popup turns the panel on or off for each supported site. The extension does not run on other websites.
 
 LISTS
-• Up to 50 watchlists with up to 150 stocks each
+• Up to 50 watchlists with up to 200 stocks each
+• All Unique Stock view — every stock across all your lists in one place, stored nowhere extra
 • Colour labels (green, blue, orange, red) and label filters
 • Sort by name, price, % change, market cap or label
 • Bulk select up to 30 rows to label, copy, move or delete
@@ -611,7 +617,7 @@ ADD STOCKS
 • Current adds the stock you are viewing
 
 CHART
-• Click a row to switch the symbol in the same tab, without reloading the page
+• Click a row — or press Up / Down — to switch the chart symbol in the same tab, without reloading the page
 • US stocks are saved with their NASDAQ: / NYSE: symbol
 
 QUOTES
@@ -650,6 +656,7 @@ Host fields **must** name the URLs. That is not the listing description. No new 
 | Host: `https://www.tradingview.com/*`, `https://in.tradingview.com/*`, `https://es.tradingview.com/*` | Dock, switch chart on row click, Current reads the chart symbol. |
 | Host: `https://www.screener.in/*`, `https://screener.in/*` | Dock, Scan, row +, Current from the page URL. |
 | Host: `https://chartink.com/*`, `https://www.chartink.com/*` | Dock, Scan, row +, Current from the page URL. |
+| Host: `https://fish-rs-board.pages.dev/*` | Dock, Scan, row +. |
 | Host: `https://public.fyers.in/*` | Public NSE/BSE symbol list (cached 24h) to match names to an exchange. No user data sent. |
 | Host: `https://query1.finance.yahoo.com/*`, `https://query2.finance.yahoo.com/*`, `https://fc.yahoo.com/*`, `https://finance.yahoo.com/*` | Delayed quotes for the open list; cookie/crumb for those requests. |
 | Host: `https://*.supabase.co/*` | Optional sync to the user's own project after Connect. Wildcard because each project has its own subdomain. Unused if cloud is off. |
@@ -682,6 +689,6 @@ Suggested answers, based on the project files. **Review them before submitting.*
 
 FishView Watchlist was developed with the help of generative AI tools and AI coding agents. All code was reviewed, tested and is maintained by **NijeethFish**. The extension itself does not use AI at runtime and sends no data to any AI service.
 
-**Privacy policy URL:** https://sites.google.com/view/fishviewwatchlist-privacy  
+**Privacy policy URL:** https://sites.google.com/view/fishview-watchlist-privacy  
 **Support / contact email:** nijeethfish@gmail.com  
 **Category:** Productivity

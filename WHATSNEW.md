@@ -1,15 +1,20 @@
 # What’s new
 
-**This version: v1.0.0** (see `manifest.json`).
+**This version: v2.0.0** (see `manifest.json`).
 
 This file is only the **current** release. Older versions stay in **[CHANGELOG.md](./CHANGELOG.md)**. What v1 includes in full is **[PHASES.md](./PHASES.md)**.
 
-## v1.0.0
+## v2.0.0
 
-First public release: a watchlist dock on TradingView, Screener.in and Chartink.
+- **Fish RS Board** is now a supported site — compact dock, row `+` buttons, and Scan, with an on/off switch in the toolbar popup.
+- **All Unique Stock** — a new view at the top of the list picker showing every unique stock across all your lists, with no stock limit. Nothing extra is stored, and it works offline. Deleting a stock here asks first, then removes it from every list.
+- **Bigger lists** — each watchlist now holds up to **200** stocks (was 150). List names can be up to 25 characters and can include `+`.
+- **Arrow keys** — Up / Down moves through your list and switches the TradingView chart, without touching TradingView's own watchlist.
+- **Faster quotes** — the same list open in two tabs now makes one Yahoo request instead of two, and the list dropdown no longer closes by itself during a price refresh.
+- **Smoother bulk edit** — a smaller actions bar, and Copy/Move open the same floating destination picker as the right-click menu (with full list names on hover).
+- **Safer imports** — importing a file whose name matches an existing list is refused instead of silently creating "Name 2".
+- Numerous reliability, security and cleanup fixes across quotes, cloud sync, TradingView and the dock. The dock no longer appears on the TradingView Screener page.
 
-- Lists stay on this computer. Optional sync is to **your** Supabase project. Use **Backup Local** / **Restore Backup**, or **Connect** to sync. Cloud Backup is not shown.
-- Quotes are delayed (Yahoo HTTP, 60 seconds, open list only) and are not realtime.
-- Watchlist cloud line (short status + **Sync**), Connect choice when lists differ, **Log** file on the Cloud tab.
+Quotes are delayed (Yahoo, every 60 seconds, open list only) and are **not realtime**.
 
 Known Chartink website issue: on Chartink’s **chart** window in their Dark theme, stock row text can be hard to read. On that screen FishView offers **Use Chartink Day**.

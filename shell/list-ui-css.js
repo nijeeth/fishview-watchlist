@@ -152,7 +152,7 @@ export const LIST_UI_CSS = `
   overflow: hidden;
 }
 .fv-table .col-name {
-  width: 42%;
+  width: 32%;
   min-width: 4.5em;
 }
 .fv-table .col-num {
@@ -225,7 +225,7 @@ export const LIST_UI_CSS = `
   cursor: context-menu;
 }
 .fv-table tbody tr:hover {
-  background: rgba(41, 98, 255, 0.12);
+  background: rgba(255, 224, 102, 0.32);
 }
 .fv-tip,
 #fv-tip {
@@ -517,7 +517,7 @@ export const LIST_UI_CSS = `
   font-size: 12px;
 }
 .fv-ctx-row:hover {
-  background: rgba(41, 98, 255, 0.14);
+  background: rgba(255, 224, 102, 0.32);
 }
 .fv-ctx-row.on {
   font-weight: 700;
@@ -762,7 +762,7 @@ export const LIST_UI_CSS = `
   background: rgba(245, 196, 64, 0.2);
 }
 .fv-list-opt:hover {
-  background: rgba(41, 98, 255, 0.12);
+  background: rgba(255, 224, 102, 0.32);
 }
 .fv-list-opt.on:hover {
   background: rgba(245, 196, 64, 0.28);
@@ -822,6 +822,13 @@ export const LIST_UI_CSS = `
 }
 .fv-menu {
   z-index: 60;
+}
+.fv-menu button:hover:not(:disabled) {
+  background: rgba(255, 224, 102, 0.32);
+  border-radius: 6px;
+}
+.fv-lab-item:hover {
+  background: rgba(255, 224, 102, 0.32);
 }
 .fv-phase {
   margin: 0 0 6px;
@@ -974,19 +981,23 @@ export const LIST_UI_CSS = `
   align-items: center;
   justify-content: center;
   flex-wrap: nowrap;
-  gap: 8px;
+  gap: 0;
   margin: 0;
-  padding: 14px 12px;
-  min-height: 44px;
-  max-height: 44px;
-  background: #5b8ef0;
-  color: #fff;
-  font-size: 16px;
+  padding: 8px 12px;
+  min-height: 36px;
+  max-height: 36px;
+  border-top: 1px solid #2962ff;
+  background: var(--fv-tab-track);
+  color: var(--fv-fg);
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.01em;
   line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
+}
+.fv-credit-accent {
+  color: #089981;
 }
 .fv-credit span {
   min-width: 0;
@@ -1057,14 +1068,19 @@ export const LIST_UI_CSS = `
   position: sticky;
   bottom: 0;
   z-index: 12;
-  margin: 8px 0 0;
-  padding: 10px;
+  margin: 6px 0 0;
+  padding: 6px;
   border: 1px solid var(--fv-line);
-  border-radius: 12px;
+  border-radius: 9px;
   background: var(--fv-bg);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 5px;
+}
+.fv-sel-bar .fv-btn {
+  height: 26px;
+  padding: 3px 8px;
+  font-size: 12px;
 }
 .fv-sel-bar.armed {
   border-color: #e53935;
@@ -1079,7 +1095,7 @@ export const LIST_UI_CSS = `
 }
 .fv-sel-count {
   margin-left: auto;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: #f6c445 !important;
 }
@@ -1089,9 +1105,10 @@ export const LIST_UI_CSS = `
   border: 0;
   color: #2962ff !important;
   font: inherit;
+  font-size: 11px;
   font-weight: 700;
   cursor: pointer;
-  padding: 4px 0;
+  padding: 2px 0;
 }
 .fv-sel-link,
 .fv-sel-cancel {
@@ -1099,20 +1116,21 @@ export const LIST_UI_CSS = `
   border: 0;
   color: var(--fv-muted);
   font: inherit;
+  font-size: 11px;
   font-weight: 700;
   cursor: pointer;
-  padding: 4px;
+  padding: 3px;
 }
 .fv-sel-acts {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px;
+  gap: 4px;
 }
 .fv-sel-stack {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  max-height: 160px;
+  gap: 1px;
+  max-height: 120px;
   overflow: auto;
 }
 .fv-sel-dd-item {
@@ -1125,13 +1143,14 @@ export const LIST_UI_CSS = `
   border: 0;
   color: var(--fv-fg);
   font: inherit;
+  font-size: 11px;
   font-weight: 600;
-  padding: 7px 6px;
-  border-radius: 8px;
+  padding: 5px 6px;
+  border-radius: 6px;
   cursor: pointer;
 }
 .fv-sel-dd-item:hover {
-  background: rgba(41, 98, 255, 0.12);
+  background: rgba(255, 224, 102, 0.32);
 }
 .fv-sel-empty {
   margin: 0;
@@ -1140,18 +1159,18 @@ export const LIST_UI_CSS = `
 }
 .fv-sel-confirm-text {
   margin: 0;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
 }
 .fv-sel-confirm-acts {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   justify-content: flex-end;
 }
 .fv-sel-cancel {
   width: 100%;
-  padding: 8px;
-  border-radius: 8px;
+  padding: 5px;
+  border-radius: 6px;
   background: rgba(127, 127, 127, 0.12);
 }
 #fv-chrome {

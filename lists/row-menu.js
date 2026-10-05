@@ -1,25 +1,23 @@
 import {
   LIST_CAP,
+  NAME_MAX,
   LABELS,
   LABEL_COLOR,
   labelTitle,
   createList,
   listsByName,
   setLabel,
+  setLabelEverywhere,
   copyStock,
   moveStock,
+  moveStockEverywhere,
+  addStock,
   removeStock,
 } from "./book.js";
 import { isolateElement } from "../shared/isolate-keys.js";
+import { esc } from "../shared/escape.js";
 
-function esc(s) {
-  return String(s)
-    .replace(/&/g, "&amp;")
-    .replace(/"/g, "&quot;")
-    .replace(/</g, "&lt;");
-}
-
-export function openRowMenu({ panel, e, book, ex, ticker, applyBook }) {
+export function openRowMenu({ panel, e, book, ex, ticker, applyBook, viewAll = false, onDeleteAll }) {
   panel.querySelectorAll(".fv-ctx").forEach((m) => m.remove());
   const menu = document.createElement("div");
   menu.className = "fv-ctx";
@@ -48,9 +46,11 @@ export function openRowMenu({ panel, e, book, ex, ticker, applyBook }) {
     menu.style.top = `${top}px`;
   };
 
-  const current = book.lists
-    .find((l) => l.id === book.activeId)
-    ?.stocks.find((s) => s.ticker === ticker && s.exchange === ex);
+  const current = viewAll
+    ? book.lists.flatMap((l) => l.stocks).find((s) => s.ticker === ticker && s.exchange === ex)
+    : book.lists
+        .find((l) => l.id === book.activeId)
+        ?.stocks.find((s) => s.ticker === ticker && s.exchange === ex);
 
   const renderMain = () => {
     menu.innerHTML = `
@@ -80,12 +80,12 @@ export function openRowMenu({ panel, e, book, ex, ticker, applyBook }) {
 
   const renderPicker = (copy) => {
     const verb = copy ? "Copy" : "Move";
-    const others = listsByName(book.lists.filter((l) => l.id !== book.activeId));
+    const others = listsByName(book.lists.filter((l) => viewAll || l.id !== book.activeId));
     const rows = others.length
       ? others
           .map(
             (l) =>
-              `<button type="button" class="fv-ctx-row" data-act="${copy ? "copy-to" : "move-to"}" data-to="${esc(l.id)}">
+              `<button type="button" class="fv-ctx-row" data-act="${copy ? "copy-to" : "move-to"}" data-to="${esc(l.id)}" title="${esc(l.name)}">
                 <span>${esc(l.name)} (${l.stocks.length})</span>
               </button>`
           )
@@ -104,7 +104,7 @@ export function openRowMenu({ panel, e, book, ex, ticker, applyBook }) {
              <div class="fv-ctx-new">
                <button type="button" class="fv-ctx-link" data-act="show-new">+ Create new list…</button>
                <div class="fv-ctx-newform" hidden>
-                 <input type="text" class="fv-ctx-newin" placeholder="List name" maxlength="40" />
+                 <input type="text" class="fv-ctx-newin" maxlength="${NAME_MAX}" />
                  <button type="button" class="fv-btn fv-pill fv-pill-add fv-ctx-gonew" data-act="create-${copy ? "copy" : "move"}">${verb} to new list</button>
                </div>
              </div>`
@@ -118,6 +118,11 @@ export function openRowMenu({ panel, e, book, ex, ticker, applyBook }) {
 
   renderMain();
 
+  const copyTo = (b, fromId, toId, e2, t) =>
+    viewAll ? addStock(b, toId, `${e2}:${t}`) : copyStock(b, fromId, toId, e2, t);
+  const moveTo = (b, fromId, toId, e2, t) =>
+    viewAll ? moveStockEverywhere(b, toId, e2, t) : moveStock(b, fromId, toId, e2, t);
+
   const runCreate = async (copy) => {
     const input = menu.querySelector(".fv-ctx-newin");
     const name = String(input?.value || "").trim();
@@ -127,7 +132,7 @@ export function openRowMenu({ panel, e, book, ex, ticker, applyBook }) {
       await applyBook(made);
       return;
     }
-    const fn = copy ? copyStock : moveStock;
+    const fn = copy ? copyTo : moveTo;
     menu.remove();
     await applyBook(await fn(made.book, made.book.activeId, made.id, ex, ticker));
   };
@@ -139,7 +144,11 @@ export function openRowMenu({ panel, e, book, ex, ticker, applyBook }) {
     const act = btn.getAttribute("data-act");
     if (act === "set-label") {
       menu.remove();
-      await applyBook(await setLabel(book, book.activeId, ex, ticker, btn.getAttribute("data-label")));
+      await applyBook(
+        viewAll
+          ? await setLabelEverywhere(book, ex, ticker, btn.getAttribute("data-label"))
+          : await setLabel(book, book.activeId, ex, ticker, btn.getAttribute("data-label"))
+      );
       return;
     }
     if (act === "open-move") {
@@ -168,12 +177,12 @@ export function openRowMenu({ panel, e, book, ex, ticker, applyBook }) {
     }
     if (act === "move-to") {
       menu.remove();
-      await applyBook(await moveStock(book, book.activeId, btn.getAttribute("data-to"), ex, ticker));
+      await applyBook(await moveTo(book, book.activeId, btn.getAttribute("data-to"), ex, ticker));
       return;
     }
     if (act === "copy-to") {
       menu.remove();
-      await applyBook(await copyStock(book, book.activeId, btn.getAttribute("data-to"), ex, ticker));
+      await applyBook(await copyTo(book, book.activeId, btn.getAttribute("data-to"), ex, ticker));
       return;
     }
     if (act === "create-move") {
@@ -186,6 +195,10 @@ export function openRowMenu({ panel, e, book, ex, ticker, applyBook }) {
     }
     if (act === "del-row") {
       menu.remove();
+      if (viewAll) {
+        await onDeleteAll?.(ex, ticker);
+        return;
+      }
       await applyBook(await removeStock(book, book.activeId, ex, ticker));
     }
   });
